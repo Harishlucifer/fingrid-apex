@@ -1,6 +1,6 @@
 pipelines:
   branches:
-    alpha-sync-github:
+    main:
       - step:
           name: Sync GitHub Mirror
           image: node:20.5.0
