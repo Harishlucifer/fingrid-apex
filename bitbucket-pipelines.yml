@@ -7,6 +7,9 @@ pipelines:
           clone:
             enabled: false
           script:
-            - git clone --bare git@bitbucket.org:sreedhar_ramasamy/fingrid-apex.git
+            - git clone --bare git@bitbucket.org:Harishlucifer/fingrid-apex.git
             - cd fingrid-apex.git
-            - git push --mirror git@github.com:sreedhar-ramasamy/fingrid-apex.git
+            - git push --mirror git@github.com:Harishlucifer/fingrid-apex.git
+            # - git clone --bare git@bitbucket.org:sreedhar_ramasamy/fingrid-apex.git
+            # - cd fingrid-apex.git
+            # - git push --mirror git@github.com:sreedhar-ramasamy/fingrid-apex.git
