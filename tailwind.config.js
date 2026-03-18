@@ -37,6 +37,7 @@ export default {
                 'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
                 'float': 'float 3s ease-in-out infinite',
                 'shimmer': 'shimmer 2s linear infinite',
+                'marquee': 'marquee 12s linear infinite',
             },
             keyframes: {
                 'fade-in': {
@@ -84,6 +85,10 @@ export default {
                     '0%': { backgroundPosition: '0% 50%' },
                     '50%': { backgroundPosition: '100% 50%' },
                     '100%': { backgroundPosition: '0% 50%' },
+                },
+                'marquee': {
+                    '0%': { transform: 'translateX(0)' },
+                    '100%': { transform: 'translateX(-33.333%)' },
                 },
             },
         },

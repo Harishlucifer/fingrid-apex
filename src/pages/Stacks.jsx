@@ -20,7 +20,7 @@ export default function Stacks() {
   return (
     <div ref={sectionRef} className="overflow-hidden">
       <section className="relative pt-32 pb-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-mint-dark via-mint-dark to-navy">
+        <div className="absolute inset-0 bg-gradient-to-br from-navy via-navy-dark to-blue">
           <div className="absolute inset-0 opacity-20">
             <div className="absolute top-20 right-20 w-72 h-72 bg-blue/30 rounded-full blur-[100px] animate-float"></div>
           </div>
@@ -55,7 +55,7 @@ export default function Stacks() {
               { icon: '📈', title: 'Auto-Scaling', desc: 'Intelligent auto-scaling based on traffic patterns and resource utilization.' },
               { icon: '🔍', title: 'Observability', desc: 'Full-stack observability with distributed tracing, metrics, and log aggregation.' },
             ].map((f, i) => (
-              <div key={f.title} className="animate-on-scroll opacity-0 translate-y-8 transition-all duration-700 group p-8 bg-white rounded-2xl border border-gray-100 hover:border-mint/20 hover:shadow-xl hover:-translate-y-2" style={{ transitionDelay: `${i * 80}ms` }}>
+              <div key={f.title} className="animate-on-scroll opacity-0 translate-y-8 transition-all duration-700 group p-8 bg-white rounded-2xl border border-gray-100 hover:border-navy/20 hover:shadow-xl hover:-translate-y-2" style={{ transitionDelay: `${i * 80}ms` }}>
                 <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">{f.icon}</div>
                 <h3 className="text-xl font-bold text-navy mb-3">{f.title}</h3>
                 <p className="text-gray-600 text-sm leading-relaxed">{f.desc}</p>
@@ -68,7 +68,7 @@ export default function Stacks() {
       <section className="py-20 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-navy mb-6 animate-on-scroll opacity-0 translate-y-8 transition-all duration-700">Build Your Stack Today</h2>
-          <Link to="/contact" className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-mint-dark to-mint text-navy font-bold rounded-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 animate-on-scroll opacity-0 translate-y-8" style={{ transitionDelay: '100ms' }}>
+          <Link to="/contact" className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-navy to-blue text-white font-bold rounded-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 animate-on-scroll opacity-0 translate-y-8" style={{ transitionDelay: '100ms' }}>
             Get Started
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
           </Link>

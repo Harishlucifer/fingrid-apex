@@ -138,21 +138,29 @@ export default function Navbar() {
   }, []);
 
   return (
-    <nav
+    <div
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         scrolled
-          ? 'bg-white/95 backdrop-blur-xl shadow-lg shadow-navy/5 py-2'
-          : 'bg-white/80 backdrop-blur-md py-4'
+          ? 'bg-navy/95 backdrop-blur-xl shadow-lg shadow-black/10 py-0'
+          : 'bg-transparent py-4 px-4 sm:px-6 lg:px-8'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav
+        className={`transition-all duration-500 ${
+          scrolled
+            ? 'max-w-full mx-0 bg-navy/95 backdrop-blur-xl py-3 px-4 sm:px-6 lg:px-8'
+            : 'max-w-7xl mx-auto bg-white/95 backdrop-blur-xl rounded-2xl shadow-lg shadow-black/5 py-3 px-4 sm:px-6 lg:px-8'
+        }`}
+      >
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
             <img
               src={logo}
               alt="Fingrid.ai"
-              className="h-10 w-auto transition-transform duration-500 group-hover:scale-105"
+              className={`h-10 w-auto transition-all duration-500 group-hover:scale-105 ${
+                scrolled ? 'brightness-0 invert' : ''
+              }`}
             />
           </Link>
 
@@ -168,9 +176,13 @@ export default function Navbar() {
                   {hasChildren ? (
                     <button
                       className={`relative px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 flex items-center gap-1.5
-                        ${isActive
-                          ? 'text-navy'
-                          : 'text-gray-600 hover:text-navy'
+                        ${scrolled
+                          ? isActive
+                            ? 'text-white'
+                            : 'text-gray-300 hover:text-white'
+                          : isActive
+                            ? 'text-navy'
+                            : 'text-gray-600 hover:text-navy'
                         }
                       `}
                       onMouseEnter={() => setActiveDropdown(item.label)}
@@ -186,21 +198,33 @@ export default function Navbar() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                       {/* Active indicator */}
-                      <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-gradient-to-r from-blue to-mint rounded-full transition-all duration-500 ${isActive ? 'w-8' : 'w-0'}`}></span>
+                      <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 rounded-full transition-all duration-500 ${
+                        scrolled
+                          ? `bg-mint ${isActive ? 'w-8' : 'w-0'}`
+                          : `bg-gradient-to-r from-blue to-mint ${isActive ? 'w-8' : 'w-0'}`
+                      }`}></span>
                     </button>
                   ) : (
                     <Link
                       to={item.path}
                       className={`relative px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 block
-                        ${isActive
-                          ? 'text-navy'
-                          : 'text-gray-600 hover:text-navy'
+                        ${scrolled
+                          ? isActive
+                            ? 'text-white'
+                            : 'text-gray-300 hover:text-white'
+                          : isActive
+                            ? 'text-navy'
+                            : 'text-gray-600 hover:text-navy'
                         }
                       `}
                     >
                       {item.label}
                       {/* Active indicator line */}
-                      <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-gradient-to-r from-blue to-mint rounded-full transition-all duration-500 ${isActive ? 'w-8' : 'w-0 group-hover:w-4'}`}></span>
+                      <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 rounded-full transition-all duration-500 ${
+                        scrolled
+                          ? `bg-mint ${isActive ? 'w-8' : 'w-0 group-hover:w-4'}`
+                          : `bg-gradient-to-r from-blue to-mint ${isActive ? 'w-8' : 'w-0 group-hover:w-4'}`
+                      }`}></span>
                     </Link>
                   )}
 
@@ -227,23 +251,37 @@ export default function Navbar() {
           <div className="hidden lg:flex items-center gap-3">
             <Link
               to="/contact"
-              className="relative px-6 py-2.5 bg-gradient-to-r from-navy to-blue text-white text-sm font-semibold rounded-xl overflow-hidden group transition-all duration-300 hover:shadow-lg hover:shadow-blue/25 hover:-translate-y-0.5"
+              className={`relative px-6 py-2.5 text-sm font-semibold rounded-xl overflow-hidden group transition-all duration-300 hover:-translate-y-0.5 ${
+                scrolled
+                  ? 'bg-white text-navy hover:shadow-lg hover:shadow-white/20'
+                  : 'bg-gradient-to-r from-navy to-blue text-white hover:shadow-lg hover:shadow-blue/25'
+              }`}
             >
-              <span className="relative z-10">Get Started</span>
-              <div className="absolute inset-0 bg-gradient-to-r from-blue to-mint opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <span className="relative z-10">Contact Us</span>
+              {!scrolled && (
+                <div className="absolute inset-0 bg-gradient-to-r from-blue to-mint opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              )}
             </Link>
           </div>
 
           {/* Mobile Menu Toggle */}
           <button
-            className="lg:hidden relative w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
+            className={`lg:hidden relative w-10 h-10 flex items-center justify-center rounded-xl transition-colors ${
+              scrolled ? 'bg-white/10 hover:bg-white/20' : 'bg-gray-50 hover:bg-gray-100'
+            }`}
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Toggle menu"
           >
             <div className="flex flex-col gap-1.5 w-5">
-              <span className={`block h-0.5 bg-navy rounded-full transition-all duration-300 ${mobileOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
-              <span className={`block h-0.5 bg-navy rounded-full transition-all duration-300 ${mobileOpen ? 'opacity-0 scale-0' : ''}`}></span>
-              <span className={`block h-0.5 bg-navy rounded-full transition-all duration-300 ${mobileOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
+              <span className={`block h-0.5 rounded-full transition-all duration-300 ${
+                scrolled ? 'bg-white' : 'bg-navy'
+              } ${mobileOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
+              <span className={`block h-0.5 rounded-full transition-all duration-300 ${
+                scrolled ? 'bg-white' : 'bg-navy'
+              } ${mobileOpen ? 'opacity-0 scale-0' : ''}`}></span>
+              <span className={`block h-0.5 rounded-full transition-all duration-300 ${
+                scrolled ? 'bg-white' : 'bg-navy'
+              } ${mobileOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
             </div>
           </button>
         </div>
@@ -254,7 +292,11 @@ export default function Navbar() {
             mobileOpen ? 'max-h-[600px] opacity-100 mt-4' : 'max-h-0 opacity-0'
           }`}
         >
-          <div className="bg-white/95 backdrop-blur-xl rounded-2xl border border-gray-100 p-4 shadow-xl">
+          <div className={`rounded-2xl border p-4 shadow-xl ${
+            scrolled
+              ? 'bg-white/95 backdrop-blur-xl border-white/10'
+              : 'bg-white/95 backdrop-blur-xl border-gray-100'
+          }`}>
             {navItems.map((item) => (
               <MobileNavItem key={item.label} item={item} />
             ))}
@@ -263,13 +305,13 @@ export default function Navbar() {
                 to="/contact"
                 className="block w-full text-center px-6 py-3 bg-gradient-to-r from-navy to-blue text-white text-sm font-semibold rounded-xl hover:shadow-lg transition-all duration-300"
               >
-                Get Started
+                Contact Us
               </Link>
             </div>
           </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </div>
   );
 }
 
