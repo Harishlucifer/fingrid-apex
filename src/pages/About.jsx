@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import ModernCard from '../components/ModernCard';
+import SEO from '../components/SEO';
 
 function useScrollAnimation() {
   const ref = useRef(null);
@@ -160,6 +161,11 @@ export default function About() {
 
   return (
     <div ref={sectionRef} className="overflow-hidden">
+      <SEO
+        title="About Us - Fingrid.ai"
+        description="Learn about Fingrid.ai (Inforvio Technologies) — 25+ years of domain expertise, AI-first operating systems for the lending ecosystem, and a proprietary Low Code Studio."
+        keywords="about Fingrid.ai, Inforvio Technologies, fintech company, lending expertise, low-code platform"
+      />
       {/* Hero */}
       <section className="relative pt-32 pb-20 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-navy via-navy-dark to-navy">

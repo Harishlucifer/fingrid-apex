@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import SEO from '../components/SEO';
 
 function useScrollAnimation() {
   const ref = useRef(null);
@@ -43,6 +44,11 @@ export default function Contact() {
 
   return (
     <div ref={sectionRef} className="overflow-hidden">
+      <SEO
+        title="Contact Us - Fingrid.ai"
+        description="Get in touch with Fingrid.ai. We'd love to discuss how our AI-powered solutions can transform your financial operations."
+        keywords="contact Fingrid.ai, get in touch, fintech support, demo request, partnership inquiry"
+      />
       {/* Hero */}
       <section className="relative pt-32 pb-20 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-navy via-navy-dark to-navy">

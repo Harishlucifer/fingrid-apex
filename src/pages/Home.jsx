@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { clientData } from '../data/clients';
 import ModernCard from '../components/ModernCard';
+import SEO from '../components/SEO';
 
 /* ===== AI Neural Network Background Canvas ===== */
 function NeuralNetworkCanvas() {
@@ -445,6 +446,11 @@ export default function Home() {
 
   return (
     <div ref={sectionRef} className="overflow-hidden">
+      <SEO
+        title="Fingrid.ai - Intelligent AI Solutions for Modern Finance"
+        description="Transform your financial operations with Fingrid.ai's cutting-edge AI platform. From lending automation to data services, we power the future of fintech."
+        keywords="Fingrid.ai, AI, fintech, lending automation, financial technology, loan origination, credit scoring"
+      />
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
         {/* AI Neural Network animated background */}
