@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { clientData } from '../data/clients';
 
 function useScrollAnimation() {
@@ -20,6 +20,228 @@ function useScrollAnimation() {
     return () => elements?.forEach((el) => observer.unobserve(el));
   }, []);
   return ref;
+}
+
+const opportunityData = [
+  {
+    category: 'LENDING SOLUTIONS',
+    categoryColor: 'text-navy',
+    categoryBg: 'bg-navy/10',
+    title: 'Lenders',
+    subtitle: 'NBFCs, HFCs, Banks',
+    description: 'End-to-end lending suite and affordable sophisticated point solutions for lenders of all sizes.',
+    points: [
+      'End to end Lending Suite for Small Lenders',
+      'Affordable Sophisticated Point Solutions for Lenders with Existing Infrastructure',
+    ],
+    accentColor: 'from-navy to-blue',
+    arrowBg: 'bg-navy',
+  },
+  {
+    category: 'DIGITAL PLATFORMS',
+    categoryColor: 'text-emerald-700',
+    categoryBg: 'bg-emerald-50',
+    title: 'Embedded Finance',
+    subtitle: 'Non-fintech platforms',
+    description: 'Plug & Play API-first solution with multi-lender integration for platforms looking to embed financing.',
+    points: [
+      'Plug & Play API first Solution with multi Lender Integration',
+      'Seamless embedding into existing digital platforms',
+    ],
+    accentColor: 'from-emerald-600 to-teal-500',
+    arrowBg: 'bg-emerald-600',
+  },
+  {
+    category: 'DISTRIBUTION',
+    categoryColor: 'text-amber-700',
+    categoryBg: 'bg-amber-50',
+    title: 'Loan Distributors',
+    subtitle: 'DSAs, Merchants, Builders, Dealers',
+    description: 'Comprehensive CRM and ERP solution designed for end-to-end loan distribution management.',
+    points: [
+      'End to end CRM cum ERP solution for Loan Distribution',
+      'Multi-lender panel management and tracking',
+    ],
+    accentColor: 'from-amber-600 to-orange-500',
+    arrowBg: 'bg-amber-600',
+  },
+];
+
+function OpportunitySection() {
+  const [activeIndex, setActiveIndex] = useState(null);
+  const sectionRef = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('animate-visible');
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
+    );
+    const elements = sectionRef.current?.querySelectorAll('.animate-on-scroll');
+    elements?.forEach((el) => observer.observe(el));
+    return () => elements?.forEach((el) => observer.unobserve(el));
+  }, []);
+
+  const handleToggle = useCallback((index) => {
+    setActiveIndex((prev) => (prev === index ? null : index));
+  }, []);
+
+  return (
+    <section
+      ref={sectionRef}
+      className="py-24 bg-gradient-to-br from-white via-gray-50/50 to-blue/5 relative overflow-hidden"
+    >
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-navy/10 to-transparent"></div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Section Header */}
+        <div className="animate-on-scroll opacity-0 translate-y-8 transition-all duration-700 mb-14">
+          <span className="text-sm font-semibold text-blue uppercase tracking-wider">Who We Serve</span>
+          <h2 className="text-4xl sm:text-5xl font-bold text-navy mt-3 mb-4">Opportunity</h2>
+          <p className="text-gray-500 text-lg max-w-2xl">
+            Tailored solutions for every player in the lending ecosystem.
+          </p>
+        </div>
+
+        {/* Cards Grid */}
+        <div className="grid md:grid-cols-3 gap-6 animate-on-scroll opacity-0 translate-y-8 transition-all duration-700" style={{ transitionDelay: '200ms' }}>
+          {opportunityData.map((opp, i) => {
+            const isActive = activeIndex === i;
+            return (
+              <div key={opp.title} className="flex flex-col">
+                {/* Card */}
+                <button
+                  onClick={() => handleToggle(i)}
+                  className={`
+                    relative text-left w-full rounded-2xl p-6 sm:p-8 border transition-all duration-500 cursor-pointer group overflow-hidden
+                    ${isActive
+                      ? 'bg-gradient-to-br from-navy via-navy-dark to-[#013a6b] border-navy shadow-2xl shadow-navy/20 scale-[1.02]'
+                      : 'bg-white border-gray-200 shadow-sm hover:shadow-xl hover:border-gray-300 hover:-translate-y-1'
+                    }
+                  `}
+                  aria-expanded={isActive}
+                >
+                  {/* Decorative glow for active */}
+                  {isActive && (
+                    <>
+                      <div className="absolute top-0 right-0 w-40 h-40 bg-blue/15 rounded-full blur-3xl -translate-y-10 translate-x-10"></div>
+                      <div className="absolute bottom-0 left-0 w-32 h-32 bg-mint/10 rounded-full blur-3xl translate-y-10 -translate-x-10"></div>
+                    </>
+                  )}
+
+                  {/* Category Badge */}
+                  <span className={`
+                    inline-block text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-md mb-4 transition-colors duration-500
+                    ${isActive ? 'bg-white/15 text-mint' : `${opp.categoryBg} ${opp.categoryColor}`}
+                  `}>
+                    {opp.category}
+                  </span>
+
+                  {/* Title */}
+                  <h3 className={`
+                    text-xl sm:text-2xl font-bold mb-1 transition-colors duration-500
+                    ${isActive ? 'text-white' : 'text-navy'}
+                  `}>
+                    {opp.title}
+                  </h3>
+
+                  {/* Subtitle */}
+                  <p className={`
+                    text-sm mb-4 transition-colors duration-500
+                    ${isActive ? 'text-white/60' : 'text-gray-400'}
+                  `}>
+                    {opp.subtitle}
+                  </p>
+
+                  {/* Description */}
+                  <p className={`
+                    text-sm leading-relaxed mb-6 transition-colors duration-500
+                    ${isActive ? 'text-white/80' : 'text-gray-600'}
+                  `}>
+                    {opp.description}
+                  </p>
+
+                  {/* Arrow Button */}
+                  <div className={`
+                    w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500
+                    ${isActive
+                      ? 'bg-mint text-navy shadow-lg shadow-mint/30'
+                      : `${opp.arrowBg} text-white group-hover:scale-110 group-hover:shadow-lg`
+                    }
+                  `}>
+                    <svg
+                      className={`w-5 h-5 transition-transform duration-500 ${isActive ? 'rotate-90' : 'group-hover:translate-x-0.5'}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </div>
+                </button>
+
+                {/* Expandable Detail Panel */}
+                <div
+                  className="grid transition-all duration-500 ease-in-out"
+                  style={{
+                    gridTemplateRows: isActive ? '1fr' : '0fr',
+                  }}
+                >
+                  <div className="overflow-hidden">
+                    <div
+                      className={`
+                        mt-3 rounded-2xl bg-gradient-to-br from-gray-50 to-white border border-gray-100 p-6 sm:p-8
+                        transition-all duration-500 ease-in-out
+                        ${isActive ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}
+                      `}
+                    >
+                      {/* Points */}
+                      <h4 className="text-sm font-bold text-navy uppercase tracking-wider mb-4">Key Highlights</h4>
+                      <ul className="space-y-3 mb-6">
+                        {opp.points.map((point, j) => (
+                          <li
+                            key={j}
+                            className="flex items-start gap-3 text-gray-700 text-sm leading-relaxed"
+                          >
+                            <span className={`
+                              w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5
+                              bg-gradient-to-br ${opp.accentColor} text-white
+                            `}>
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            </span>
+                            <span>{point}</span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      {/* Illustration */}
+                      <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-navy/5 to-blue/5 p-4 flex justify-center">
+                        <img
+                          src={new URL('../assets/opportunity_illustration.png', import.meta.url).href}
+                          alt="Opportunity"
+                          className="w-full max-w-[280px] h-auto object-contain"
+                        />
+                        <div className="absolute -top-3 -right-3 w-10 h-10 bg-mint/20 rounded-full blur-lg animate-float"></div>
+                        <div className="absolute -bottom-2 -left-4 w-12 h-12 bg-blue/15 rounded-full blur-lg animate-float" style={{ animationDelay: '1.5s' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
 }
 
 export default function Home() {
@@ -183,6 +405,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Opportunity Section */}
+      <OpportunitySection />
 
       {/* Products Preview */}
       <section className="py-24 bg-white relative">
@@ -379,38 +604,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Lending CTA Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <span className="text-sm font-semibold text-blue uppercase tracking-wider animate-on-scroll opacity-0 translate-y-8 transition-all duration-700">Get Started</span>
-          <h2 className="text-3xl sm:text-4xl font-bold text-navy mt-3 mb-4 animate-on-scroll opacity-0 translate-y-8 transition-all duration-700" style={{ transitionDelay: '100ms' }}>
-            Let's Transform Your Lending Operations
-          </h2>
-          <p className="text-gray-600 text-lg mb-8 animate-on-scroll opacity-0 translate-y-8 transition-all duration-700" style={{ transitionDelay: '150ms' }}>
-            Schedule a demo or get in touch to learn how Fingrid can power your lending ecosystem
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-on-scroll opacity-0 translate-y-8 transition-all duration-700" style={{ transitionDelay: '200ms' }}>
-            <Link
-              to="/contact"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-navy to-blue text-white font-bold rounded-xl hover:shadow-2xl hover:shadow-blue/25 hover:-translate-y-1 transition-all duration-300"
-            >
-              Schedule a Demo
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            </Link>
-            <Link
-              to="/contact"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-navy font-bold rounded-xl border-2 border-gray-200 hover:border-navy/30 hover:-translate-y-1 transition-all duration-300"
-            >
-              Get in Touch
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-            </Link>
-          </div>
-        </div>
-      </section>
 
       {/* CTA Section */}
       <section className="py-24 relative overflow-hidden">

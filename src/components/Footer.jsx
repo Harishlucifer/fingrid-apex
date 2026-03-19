@@ -12,12 +12,12 @@ export default function Footer() {
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Footer */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 py-16">
           {/* Brand */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-3">
             <img src={logo} alt="Fingrid.ai" className="h-10 mb-6 brightness-0 invert" />
             <p className="text-gray-300 text-sm leading-relaxed mb-6">
-              Empowering businesses with intelligent AI-powered solutions for lending, data services, and technology infrastructure.
+              Operating Systems for each player in the Lending Ecosystem — discover, network, integrate and grow.
             </p>
             <div className="flex gap-3">
               {['linkedin', 'twitter', 'github'].map((social) => (
@@ -32,16 +32,39 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Products */}
-          <div>
+          {/* FinGrid Studio & Stacks */}
+          <div className="lg:col-span-2">
             <h3 className="text-sm font-semibold uppercase tracking-wider text-mint mb-6">Products</h3>
             <ul className="space-y-3">
               {[
-                { label: 'Lending', path: '/products/lending' },
-                { label: 'Bc DS', path: '/products/lending/bc-ds' },
-                { label: 'DSaaS', path: '/products/lending/dsaas' },
-                { label: 'OS Suite', path: '/products/os-suite' },
-                { label: 'Stacks', path: '/products/stacks' },
+                { label: 'FinGrid Studio', path: '/products/studio' },
+                { label: 'FinGrid Stacks', path: '/products/stacks' },
+                { label: 'FinGrid OS', path: '/products/os' },
+                { label: 'FinGrid Network', path: '/products/network' },
+              ].map((link) => (
+                <li key={link.path}>
+                  <Link
+                    to={link.path}
+                    className="text-gray-300 hover:text-mint text-sm transition-all duration-300 hover:translate-x-1 inline-block"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* FinGrid OS Links */}
+          <div className="lg:col-span-2">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-mint mb-6">FinGrid OS</h3>
+            <ul className="space-y-3">
+              {[
+                { label: 'LenderOS', path: '/products/os/lender-os' },
+                { label: 'BcOS', path: '/products/os/bc-os' },
+                { label: 'DsaOS', path: '/products/os/dsa-os' },
+                { label: 'LspOS', path: '/products/os/lsp-os' },
+                { label: 'AgencyOS', path: '/products/os/agency-os' },
+                { label: 'AutoDealerOS', path: '/products/os/auto-dealer-os' },
               ].map((link) => (
                 <li key={link.path}>
                   <Link
@@ -56,7 +79,7 @@ export default function Footer() {
           </div>
 
           {/* Company */}
-          <div>
+          <div className="lg:col-span-2">
             <h3 className="text-sm font-semibold uppercase tracking-wider text-mint mb-6">Company</h3>
             <ul className="space-y-3">
               {[
@@ -78,7 +101,7 @@ export default function Footer() {
           </div>
 
           {/* Newsletter */}
-          <div>
+          <div className="lg:col-span-3">
             <h3 className="text-sm font-semibold uppercase tracking-wider text-mint mb-6">Stay Updated</h3>
             <p className="text-gray-300 text-sm mb-4">Subscribe to our newsletter for the latest updates.</p>
             <form className="flex gap-2" onSubmit={(e) => e.preventDefault()}>

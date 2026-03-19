@@ -66,7 +66,7 @@ body {
 
 .animate-on-scroll.animate-visible {
   opacity: 1 !important;
-  transform: translateY(0) !important;
+  transform: translateY(0) translateX(0) !important;
 }
 
 /* ===== Scrollbar ===== */
