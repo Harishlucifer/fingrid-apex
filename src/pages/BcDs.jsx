@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
+import ModernCard from '../components/ModernCard';
 
 function useScrollAnimation() {
   const ref = useRef(null);
@@ -46,7 +47,7 @@ export default function BcDs() {
             <h2 className="text-4xl font-bold text-navy mb-4">Bc DS Features</h2>
             <p className="text-gray-500 text-lg max-w-2xl mx-auto">Enterprise-grade credit data infrastructure.</p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 card-grid">
             {[
               { icon: '🏦', title: 'Multi-Bureau Aggregation', desc: 'Aggregate data from multiple credit bureaus in a single unified view.' },
               { icon: '📈', title: 'Trend Analysis', desc: 'Track credit trends over time with advanced time-series analytics.' },
@@ -55,11 +56,13 @@ export default function BcDs() {
               { icon: '📜', title: 'Audit Trail', desc: 'Complete audit trail for regulatory compliance and reporting.' },
               { icon: '🔗', title: 'API Integration', desc: 'RESTful APIs for seamless integration with your existing systems.' },
             ].map((f, i) => (
-              <div key={f.title} className="animate-on-scroll opacity-0 translate-y-8 transition-all duration-700 group p-8 bg-white rounded-2xl border border-gray-100 hover:border-navy/20 hover:shadow-xl hover:-translate-y-2" style={{ transitionDelay: `${i * 80}ms` }}>
-                <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">{f.icon}</div>
-                <h3 className="text-xl font-bold text-navy mb-3">{f.title}</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">{f.desc}</p>
-              </div>
+              <ModernCard
+                key={f.title}
+                icon={f.icon}
+                title={f.title}
+                description={f.desc}
+                index={i}
+              />
             ))}
           </div>
         </div>

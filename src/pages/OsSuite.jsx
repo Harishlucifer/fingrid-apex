@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
+import ModernCard from '../components/ModernCard';
 
 function useScrollAnimation() {
   const ref = useRef(null);
@@ -46,7 +47,7 @@ export default function OsSuite() {
             <h2 className="text-4xl font-bold text-navy mb-4">Suite Components</h2>
             <p className="text-gray-500 text-lg max-w-2xl mx-auto">Everything your operations team needs in one platform.</p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 card-grid">
             {[
               { icon: '⚙️', title: 'Workflow Engine', desc: 'Visual workflow builder with drag-and-drop interface for complex business process automation.' },
               { icon: '📊', title: 'Dashboard Studio', desc: 'Create custom dashboards with real-time data visualization and interactive charts.' },
@@ -55,11 +56,13 @@ export default function OsSuite() {
               { icon: '🗄️', title: 'Data Pipeline', desc: 'Build scalable data pipelines for ETL, streaming, and batch processing.' },
               { icon: '🔐', title: 'Access Control', desc: 'Role-based access control with granular permissions and audit logging.' },
             ].map((f, i) => (
-              <div key={f.title} className="animate-on-scroll opacity-0 translate-y-8 transition-all duration-700 group p-8 bg-white rounded-2xl border border-gray-100 hover:border-blue/20 hover:shadow-xl hover:-translate-y-2" style={{ transitionDelay: `${i * 80}ms` }}>
-                <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">{f.icon}</div>
-                <h3 className="text-xl font-bold text-navy mb-3">{f.title}</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">{f.desc}</p>
-              </div>
+              <ModernCard
+                key={f.title}
+                icon={f.icon}
+                title={f.title}
+                description={f.desc}
+                index={i}
+              />
             ))}
           </div>
         </div>

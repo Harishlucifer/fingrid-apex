@@ -1,6 +1,206 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { clientData } from '../data/clients';
+import ModernCard from '../components/ModernCard';
+
+/* ===== AI Neural Network Background Canvas ===== */
+function NeuralNetworkCanvas() {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let animId;
+    let nodes = [];
+    const nodeCount = 60;
+    const connectionDist = 160;
+
+    const resize = () => {
+      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Create nodes
+    const w = canvas.offsetWidth;
+    const h = canvas.offsetHeight;
+    for (let i = 0; i < nodeCount; i++) {
+      nodes.push({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
+        r: Math.random() * 2.5 + 1,
+        pulse: Math.random() * Math.PI * 2,
+      });
+    }
+
+    const animate = () => {
+      const cw = canvas.offsetWidth;
+      const ch = canvas.offsetHeight;
+      ctx.clearRect(0, 0, cw, ch);
+
+      // Update positions
+      nodes.forEach((n) => {
+        n.x += n.vx;
+        n.y += n.vy;
+        n.pulse += 0.02;
+        if (n.x < 0 || n.x > cw) n.vx *= -1;
+        if (n.y < 0 || n.y > ch) n.vy *= -1;
+      });
+
+      // Draw connections
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[i].x - nodes[j].x;
+          const dy = nodes[i].y - nodes[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < connectionDist) {
+            const alpha = (1 - dist / connectionDist) * 0.25;
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.strokeStyle = `rgba(50, 132, 255, ${alpha})`;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Draw nodes
+      nodes.forEach((n) => {
+        const glow = 0.5 + Math.sin(n.pulse) * 0.3;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(53, 234, 149, ${glow})`;
+        ctx.fill();
+        // outer glow
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r + 3, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(53, 234, 149, ${glow * 0.15})`;
+        ctx.fill();
+      });
+
+      animId = requestAnimationFrame(animate);
+    };
+    animate();
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener('resize', resize);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 w-full h-full"
+      style={{ opacity: 0.6 }}
+    />
+  );
+}
+
+/* ===== Unique SVG Illustrations per Opportunity ===== */
+function LenderIllustration() {
+  return (
+    <svg viewBox="0 0 280 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-[280px] h-auto">
+      {/* Bank building */}
+      <rect x="90" y="60" width="100" height="80" rx="4" fill="#01347c" opacity="0.12" />
+      <rect x="100" y="40" width="80" height="20" rx="2" fill="#01347c" opacity="0.18" />
+      <polygon points="140,25 185,40 95,40" fill="#01347c" opacity="0.22" />
+      {/* Pillars */}
+      <rect x="108" y="70" width="10" height="50" rx="2" fill="#3284ff" opacity="0.3" />
+      <rect x="128" y="70" width="10" height="50" rx="2" fill="#3284ff" opacity="0.3" />
+      <rect x="148" y="70" width="10" height="50" rx="2" fill="#3284ff" opacity="0.3" />
+      <rect x="168" y="70" width="10" height="50" rx="2" fill="#3284ff" opacity="0.3" />
+      {/* Arrows going out */}
+      <line x1="140" y1="140" x2="60" y2="170" stroke="#35ea95" strokeWidth="2" strokeDasharray="4 3" opacity="0.6" />
+      <line x1="140" y1="140" x2="140" y2="180" stroke="#35ea95" strokeWidth="2" strokeDasharray="4 3" opacity="0.6" />
+      <line x1="140" y1="140" x2="220" y2="170" stroke="#35ea95" strokeWidth="2" strokeDasharray="4 3" opacity="0.6" />
+      {/* Endpoint dots */}
+      <circle cx="60" cy="170" r="8" fill="#35ea95" opacity="0.25" />
+      <circle cx="60" cy="170" r="4" fill="#35ea95" opacity="0.6" />
+      <circle cx="140" cy="180" r="8" fill="#35ea95" opacity="0.25" />
+      <circle cx="140" cy="180" r="4" fill="#35ea95" opacity="0.6" />
+      <circle cx="220" cy="170" r="8" fill="#35ea95" opacity="0.25" />
+      <circle cx="220" cy="170" r="4" fill="#35ea95" opacity="0.6" />
+      {/* Labels */}
+      <text x="45" y="192" fontSize="9" fill="#01347c" opacity="0.6" fontFamily="Inter">NBFC</text>
+      <text x="130" y="198" fontSize="9" fill="#01347c" opacity="0.6" fontFamily="Inter">HFC</text>
+      <text x="208" y="192" fontSize="9" fill="#01347c" opacity="0.6" fontFamily="Inter">Bank</text>
+    </svg>
+  );
+}
+
+function EmbeddedFinanceIllustration() {
+  return (
+    <svg viewBox="0 0 280 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-[280px] h-auto">
+      {/* Center API block */}
+      <rect x="100" y="70" width="80" height="60" rx="12" fill="#01347c" opacity="0.15" />
+      <text x="118" y="105" fontSize="16" fontWeight="700" fill="#01347c" opacity="0.5" fontFamily="Inter">{"<API/>"}</text>
+      {/* Platform blocks */}
+      <rect x="20" y="30" width="50" height="35" rx="6" fill="#0a9e6e" opacity="0.15" />
+      <rect x="20" y="36" width="50" height="4" rx="2" fill="#35ea95" opacity="0.4" />
+      <rect x="20" y="44" width="35" height="4" rx="2" fill="#35ea95" opacity="0.25" />
+      <rect x="20" y="52" width="45" height="4" rx="2" fill="#35ea95" opacity="0.2" />
+      <rect x="210" y="30" width="50" height="35" rx="6" fill="#0a9e6e" opacity="0.15" />
+      <rect x="210" y="36" width="50" height="4" rx="2" fill="#35ea95" opacity="0.4" />
+      <rect x="210" y="44" width="35" height="4" rx="2" fill="#35ea95" opacity="0.25" />
+      <rect x="210" y="52" width="45" height="4" rx="2" fill="#35ea95" opacity="0.2" />
+      <rect x="20" y="140" width="50" height="35" rx="6" fill="#3284ff" opacity="0.12" />
+      <rect x="20" y="146" width="50" height="4" rx="2" fill="#3284ff" opacity="0.3" />
+      <rect x="20" y="154" width="35" height="4" rx="2" fill="#3284ff" opacity="0.2" />
+      <rect x="210" y="140" width="50" height="35" rx="6" fill="#3284ff" opacity="0.12" />
+      <rect x="210" y="146" width="50" height="4" rx="2" fill="#3284ff" opacity="0.3" />
+      <rect x="210" y="154" width="35" height="4" rx="2" fill="#3284ff" opacity="0.2" />
+      {/* Connections */}
+      <line x1="70" y1="48" x2="100" y2="85" stroke="#3284ff" strokeWidth="1.5" strokeDasharray="5 3" opacity="0.4" />
+      <line x1="210" y1="48" x2="180" y2="85" stroke="#3284ff" strokeWidth="1.5" strokeDasharray="5 3" opacity="0.4" />
+      <line x1="70" y1="158" x2="100" y2="115" stroke="#3284ff" strokeWidth="1.5" strokeDasharray="5 3" opacity="0.4" />
+      <line x1="210" y1="158" x2="180" y2="115" stroke="#3284ff" strokeWidth="1.5" strokeDasharray="5 3" opacity="0.4" />
+      {/* Arrows */}
+      <circle cx="85" cy="66" r="3" fill="#3284ff" opacity="0.5" />
+      <circle cx="195" cy="66" r="3" fill="#3284ff" opacity="0.5" />
+      <circle cx="85" cy="136" r="3" fill="#3284ff" opacity="0.5" />
+      <circle cx="195" cy="136" r="3" fill="#3284ff" opacity="0.5" />
+    </svg>
+  );
+}
+
+function DistributorIllustration() {
+  return (
+    <svg viewBox="0 0 280 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-[280px] h-auto">
+      {/* Center hub */}
+      <circle cx="140" cy="90" r="28" fill="#01347c" opacity="0.12" />
+      <circle cx="140" cy="90" r="18" fill="#01347c" opacity="0.18" />
+      <circle cx="140" cy="90" r="6" fill="#3284ff" opacity="0.5" />
+      {/* Satellite nodes */}
+      {[0, 60, 120, 180, 240, 300].map((angle, i) => {
+        const rad = (angle * Math.PI) / 180;
+        const x = 140 + Math.cos(rad) * 70;
+        const y = 90 + Math.sin(rad) * 65;
+        const colors = ['#35ea95', '#3284ff', '#01347c', '#35ea95', '#3284ff', '#01347c'];
+        return (
+          <g key={i}>
+            <line x1="140" y1="90" x2={x} y2={y} stroke={colors[i]} strokeWidth="1.5" strokeDasharray="4 3" opacity="0.35" />
+            <circle cx={x} cy={y} r="12" fill={colors[i]} opacity="0.12" />
+            <circle cx={x} cy={y} r="5" fill={colors[i]} opacity="0.45" />
+          </g>
+        );
+      })}
+      {/* Labels around */}
+      <text x="50" y="195" fontSize="8" fill="#01347c" opacity="0.5" fontFamily="Inter">DSA</text>
+      <text x="105" y="195" fontSize="8" fill="#01347c" opacity="0.5" fontFamily="Inter">Merchant</text>
+      <text x="180" y="195" fontSize="8" fill="#01347c" opacity="0.5" fontFamily="Inter">Builder</text>
+      <text x="230" y="195" fontSize="8" fill="#01347c" opacity="0.5" fontFamily="Inter">Dealer</text>
+    </svg>
+  );
+}
+
+const illustrations = [LenderIllustration, EmbeddedFinanceIllustration, DistributorIllustration];
 
 function useScrollAnimation() {
   const ref = useRef(null);
@@ -222,13 +422,9 @@ function OpportunitySection() {
                         ))}
                       </ul>
 
-                      {/* Illustration */}
-                      <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-navy/5 to-blue/5 p-4 flex justify-center">
-                        <img
-                          src={new URL('../assets/opportunity_illustration.png', import.meta.url).href}
-                          alt="Opportunity"
-                          className="w-full max-w-[280px] h-auto object-contain"
-                        />
+                      {/* Illustration — unique per card */}
+                      <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-navy/5 to-blue/5 p-6 flex justify-center">
+                        {(() => { const Illus = illustrations[i]; return <Illus />; })()}
                         <div className="absolute -top-3 -right-3 w-10 h-10 bg-mint/20 rounded-full blur-lg animate-float"></div>
                         <div className="absolute -bottom-2 -left-4 w-12 h-12 bg-blue/15 rounded-full blur-lg animate-float" style={{ animationDelay: '1.5s' }}></div>
                       </div>
@@ -251,17 +447,20 @@ export default function Home() {
     <div ref={sectionRef} className="overflow-hidden">
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
-        {/* Animated background */}
+        {/* AI Neural Network animated background */}
         <div className="absolute inset-0 bg-gradient-to-br from-navy via-navy-dark to-navy">
+          {/* Soft glowing orbs */}
           <div className="absolute inset-0 opacity-30">
             <div className="absolute top-20 left-10 w-72 h-72 bg-blue/30 rounded-full blur-[100px] animate-float"></div>
             <div className="absolute bottom-20 right-10 w-96 h-96 bg-mint/20 rounded-full blur-[120px] animate-float" style={{ animationDelay: '1s' }}></div>
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue/10 rounded-full blur-[150px] animate-pulse-glow"></div>
           </div>
-          {/* Grid pattern overlay */}
+          {/* Neural network canvas */}
+          <NeuralNetworkCanvas />
+          {/* Subtle grid overlay */}
           <div className="absolute inset-0" style={{
-            backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(50,132,255,0.15) 1px, transparent 0)',
-            backgroundSize: '40px 40px'
+            backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(50,132,255,0.08) 1px, transparent 0)',
+            backgroundSize: '48px 48px'
           }}></div>
         </div>
 
@@ -326,11 +525,11 @@ export default function Home() {
         </div>
 
         {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce-gentle">
+        {/* <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce-gentle">
           <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center pt-2">
             <div className="w-1 h-3 bg-mint rounded-full animate-pulse"></div>
           </div>
-        </div>
+        </div> */}
       </section>
 
       {/* Features Section */}
@@ -347,60 +546,53 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 card-grid">
             {[
               {
                 icon: '🚀',
                 title: 'Lightning Fast',
                 description: 'Process millions of transactions in real-time with our optimized infrastructure and AI-driven automation.',
-                color: 'from-blue/10 to-blue/5',
-                border: 'hover:border-blue/30',
+                iconBg: 'bg-gradient-to-br from-blue/10 to-blue/5',
               },
               {
                 icon: '🔒',
                 title: 'Bank-Grade Security',
                 description: 'Enterprise-level encryption and compliance with global financial regulations ensure your data stays protected.',
-                color: 'from-navy/10 to-navy/5',
-                border: 'hover:border-navy/30',
+                iconBg: 'bg-gradient-to-br from-navy/10 to-navy/5',
               },
               {
                 icon: '🤖',
                 title: 'AI-Powered Insights',
                 description: 'Leverage machine learning algorithms that continuously learn and adapt to provide actionable intelligence.',
-                color: 'from-mint/10 to-mint/5',
-                border: 'hover:border-mint/30',
+                iconBg: 'bg-gradient-to-br from-mint/10 to-mint/5',
               },
               {
                 icon: '📊',
                 title: 'Advanced Analytics',
                 description: 'Comprehensive dashboards and reporting tools that transform raw data into strategic business decisions.',
-                color: 'from-blue/10 to-mint/5',
-                border: 'hover:border-blue/30',
+                iconBg: 'bg-gradient-to-br from-blue/10 to-mint/5',
               },
               {
                 icon: '🔗',
                 title: 'Seamless Integration',
                 description: 'Connect with your existing systems through our robust APIs and pre-built integrations with major platforms.',
-                color: 'from-mint/10 to-blue/5',
-                border: 'hover:border-mint/30',
+                iconBg: 'bg-gradient-to-br from-mint/10 to-blue/5',
               },
               {
                 icon: '🌐',
                 title: 'Global Scale',
                 description: 'Deploy across regions with multi-currency support, localized compliance, and 24/7 global infrastructure.',
-                color: 'from-navy/10 to-blue/5',
-                border: 'hover:border-navy/30',
+                iconBg: 'bg-gradient-to-br from-navy/10 to-blue/5',
               },
             ].map((feature, i) => (
-              <div
+              <ModernCard
                 key={feature.title}
-                className={`animate-on-scroll opacity-0 translate-y-8 transition-all duration-700 group p-8 rounded-2xl bg-gradient-to-br ${feature.color} border border-transparent ${feature.border} hover:shadow-xl hover:-translate-y-2 cursor-default`}
-                style={{ transitionDelay: `${i * 100}ms` }}
-              >
-                <div className="text-4xl mb-4 group-hover:scale-110 group-hover:animate-bounce-gentle transition-transform duration-300">{feature.icon}</div>
-                <h3 className="text-xl font-bold text-navy mb-3">{feature.title}</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">{feature.description}</p>
-              </div>
+                icon={feature.icon}
+                title={feature.title}
+                description={feature.description}
+                iconBg={feature.iconBg}
+                index={i}
+              />
             ))}
           </div>
         </div>

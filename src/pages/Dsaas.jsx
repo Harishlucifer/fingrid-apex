@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
+import ModernCard from '../components/ModernCard';
 
 function useScrollAnimation() {
   const ref = useRef(null);
@@ -46,7 +47,7 @@ export default function Dsaas() {
             <h2 className="text-4xl font-bold text-navy mb-4">DSaaS Capabilities</h2>
             <p className="text-gray-500 text-lg max-w-2xl mx-auto">Scalable data infrastructure for modern lending.</p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 card-grid">
             {[
               { icon: '☁️', title: 'Cloud-Native Architecture', desc: 'Built on cloud-native principles for unlimited scalability and high availability.' },
               { icon: '⚡', title: 'Real-Time Processing', desc: 'Process millions of data points in real-time for instant insights and decisions.' },
@@ -55,11 +56,13 @@ export default function Dsaas() {
               { icon: '🔄', title: 'ETL Pipelines', desc: 'Automated data extraction, transformation, and loading from any source.' },
               { icon: '🌐', title: 'Multi-Tenant', desc: 'Enterprise multi-tenant architecture with complete data isolation.' },
             ].map((f, i) => (
-              <div key={f.title} className="animate-on-scroll opacity-0 translate-y-8 transition-all duration-700 group p-8 bg-white rounded-2xl border border-gray-100 hover:border-blue/20 hover:shadow-xl hover:-translate-y-2" style={{ transitionDelay: `${i * 80}ms` }}>
-                <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">{f.icon}</div>
-                <h3 className="text-xl font-bold text-navy mb-3">{f.title}</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">{f.desc}</p>
-              </div>
+              <ModernCard
+                key={f.title}
+                icon={f.icon}
+                title={f.title}
+                description={f.desc}
+                index={i}
+              />
             ))}
           </div>
         </div>

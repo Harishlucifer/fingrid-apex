@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
+import ModernCard from '../components/ModernCard';
 
 function useScrollAnimation() {
   const ref = useRef(null);
@@ -333,26 +334,149 @@ export default function About() {
             <p className="text-gray-500 text-lg max-w-2xl mx-auto">The principles that drive every product we build and every partnership we form.</p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 card-grid">
             {values.map((value, i) => (
-              <div
+              <ModernCard
                 key={value.title}
-                className="animate-on-scroll opacity-0 translate-y-8 transition-all duration-700 group p-8 bg-white rounded-2xl border border-gray-100 hover:border-blue/20 hover:shadow-xl hover:-translate-y-2 cursor-default text-center"
-                style={{ transitionDelay: `${i * 100}ms` }}
-              >
-                <div className="w-16 h-16 mx-auto mb-5 bg-gradient-to-br from-navy/10 to-blue/10 rounded-2xl flex items-center justify-center text-navy group-hover:from-navy group-hover:to-blue group-hover:text-white transition-all duration-500">
-                  {value.icon}
-                </div>
-                <h3 className="text-lg font-bold text-navy mb-2">{value.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{value.description}</p>
-              </div>
+                icon={value.icon}
+                title={value.title}
+                description={value.description}
+                iconBg="bg-gradient-to-br from-navy/10 to-blue/10"
+                className="text-center"
+                index={i}
+              />
             ))}
           </div>
         </div>
       </section>
 
-      {/* Functional Domains Showcase */}
+      {/* Vision & Phased Expansion */}
       <section className="py-24 bg-white relative overflow-hidden">
+        <div className="absolute -right-40 top-1/4 w-80 h-80 bg-blue/5 rounded-full blur-3xl"></div>
+        <div className="absolute -left-40 bottom-1/4 w-80 h-80 bg-mint/5 rounded-full blur-3xl"></div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16 animate-on-scroll opacity-0 translate-y-8 transition-all duration-700">
+            <span className="text-sm font-semibold text-blue uppercase tracking-wider">Our Roadmap</span>
+            <h2 className="text-4xl sm:text-5xl font-bold text-navy mt-3 mb-4">Vision &amp; Phased Expansion</h2>
+            <p className="text-gray-500 text-lg max-w-3xl mx-auto">
+              From Lending SaaS → Financial Infrastructure → Venture Creation
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-8 mb-12">
+            {[
+              {
+                phase: 'Phase 1',
+                timeline: 'Now → Near Term',
+                title: 'Build the Lending Backbone',
+                icon: '🏗️',
+                borderColor: 'border-blue',
+                bgAccent: 'from-blue/5 to-navy/5',
+                headerGradient: 'from-navy to-blue',
+                items: [
+                  'End-to-end lending suite',
+                  'Digitize originations → servicing → collections',
+                  'Serve NBFCs, fintechs, agencies',
+                ],
+                benefits: ['Predictable revenue', 'Deep integrations', 'Data scale', 'Ecosystem trust'],
+                benefitColor: 'text-blue',
+              },
+              {
+                phase: 'Phase 2',
+                timeline: 'Expansion Stage',
+                title: 'Allied Financial Ecosystems',
+                icon: '📈',
+                borderColor: 'border-red-500',
+                bgAccent: 'from-red-50/50 to-orange-50/50',
+                headerGradient: 'from-red-500 to-orange-500',
+                items: [
+                  'Insurance distribution',
+                  'Auto dealerships & vehicle finance',
+                  'Real estate developer finance',
+                  'Embedded finance at POS',
+                ],
+                benefits: ['Higher transaction volume', 'Multi-product reach', 'Platform stickiness'],
+                benefitColor: 'text-red-500',
+              },
+              {
+                phase: 'Phase 3',
+                timeline: 'Scale Stage',
+                title: 'Fingrid Venture Studio',
+                icon: '🚀',
+                borderColor: 'border-amber-500',
+                bgAccent: 'from-amber-50/50 to-yellow-50/50',
+                headerGradient: 'from-amber-500 to-yellow-500',
+                items: [
+                  'New fintechs launch on Fingrid',
+                  'Provide tech, risk rails, integrations',
+                  'Plus equity ownership',
+                ],
+                benefits: ['Portfolio of future customers', 'Exponential valuation upside', 'Ecosystem control'],
+                benefitColor: 'text-amber-600',
+              },
+            ].map((phase, i) => (
+              <div
+                key={phase.phase}
+                className={`animate-on-scroll opacity-0 translate-y-8 transition-all duration-700 group`}
+                style={{ transitionDelay: `${i * 150}ms` }}
+              >
+                <div className={`h-full bg-white rounded-2xl border-2 ${phase.borderColor} overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition-all duration-500`}>
+                  {/* Header */}
+                  <div className={`bg-gradient-to-r ${phase.headerGradient} p-5 relative overflow-hidden`}>
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl transform translate-x-4 -translate-y-4 group-hover:scale-150 transition-transform duration-700"></div>
+                    <div className="relative z-10">
+                      <span className="text-white/80 text-xs font-medium uppercase tracking-wider">{phase.timeline}</span>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="text-2xl">{phase.icon}</span>
+                        <div>
+                          <span className="text-white font-bold text-lg">{phase.phase}</span>
+                          <h3 className="text-white font-bold text-base">{phase.title}</h3>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Body */}
+                  <div className="p-6">
+                    <ul className="space-y-3 mb-6">
+                      {phase.items.map((item, j) => (
+                        <li key={j} className="flex items-start gap-3 text-sm text-gray-700">
+                          <span className="w-1.5 h-1.5 bg-navy rounded-full flex-shrink-0 mt-2"></span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="pt-4 border-t border-gray-100">
+                      <div className="flex flex-wrap gap-x-3 gap-y-1">
+                        {phase.benefits.map((benefit, j) => (
+                          <span key={j} className={`text-xs font-semibold ${phase.benefitColor} flex items-center gap-1`}>
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                            {benefit}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Bottom Tagline */}
+          <div className="animate-on-scroll opacity-0 translate-y-8 transition-all duration-700" style={{ transitionDelay: '500ms' }}>
+            <div className="bg-gradient-to-r from-navy via-navy-dark to-blue rounded-2xl py-5 px-8 text-center">
+              <p className="text-white font-semibold text-sm sm:text-base">
+                We start by powering lenders. Then we power financial commerce. Finally, we create the next generation of fintechs.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Functional Domains Showcase */}
+      <section className="py-24 bg-gray-50 relative overflow-hidden">
         <div className="absolute -right-40 top-1/2 -translate-y-1/2 w-80 h-80 bg-mint/5 rounded-full blur-3xl"></div>
         <div className="absolute -left-40 top-1/3 w-80 h-80 bg-blue/5 rounded-full blur-3xl"></div>
 
@@ -365,24 +489,24 @@ export default function About() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5 card-grid">
             {[
-              { name: 'Marketing', icon: '📢', color: 'from-blue/5 to-blue/10', hover: 'hover:border-blue/30' },
-              { name: 'Sales', icon: '💼', color: 'from-navy/5 to-navy/10', hover: 'hover:border-navy/30' },
-              { name: 'Credit', icon: '💳', color: 'from-mint/5 to-mint/10', hover: 'hover:border-mint/30' },
-              { name: 'Loan Management', icon: '🏦', color: 'from-blue/5 to-mint/5', hover: 'hover:border-blue/30' },
-              { name: 'Collections', icon: '📋', color: 'from-navy/5 to-blue/5', hover: 'hover:border-navy/30' },
-              { name: 'HRMS', icon: '👥', color: 'from-mint/5 to-blue/5', hover: 'hover:border-mint/30' },
-              { name: 'Financials', icon: '📊', color: 'from-blue/5 to-navy/5', hover: 'hover:border-blue/30' },
+              { name: 'Marketing', icon: '📢', iconBg: 'bg-gradient-to-br from-blue/5 to-blue/10' },
+              { name: 'Sales', icon: '💼', iconBg: 'bg-gradient-to-br from-navy/5 to-navy/10' },
+              { name: 'Credit', icon: '💳', iconBg: 'bg-gradient-to-br from-mint/5 to-mint/10' },
+              { name: 'Loan Management', icon: '🏦', iconBg: 'bg-gradient-to-br from-blue/5 to-mint/5' },
+              { name: 'Collections', icon: '📋', iconBg: 'bg-gradient-to-br from-navy/5 to-blue/5' },
+              { name: 'HRMS', icon: '👥', iconBg: 'bg-gradient-to-br from-mint/5 to-blue/5' },
+              { name: 'Financials', icon: '📊', iconBg: 'bg-gradient-to-br from-blue/5 to-navy/5' },
             ].map((domain, i) => (
-              <div
+              <ModernCard
                 key={domain.name}
-                className={`animate-on-scroll opacity-0 translate-y-8 transition-all duration-700 group p-6 bg-gradient-to-br ${domain.color} rounded-2xl border border-transparent ${domain.hover} hover:shadow-lg hover:-translate-y-1 cursor-default text-center`}
-                style={{ transitionDelay: `${i * 80}ms` }}
-              >
-                <div className="text-4xl mb-3 group-hover:scale-110 group-hover:animate-bounce-gentle transition-transform duration-300">{domain.icon}</div>
-                <h3 className="text-base font-bold text-navy">{domain.name}</h3>
-              </div>
+                icon={domain.icon}
+                title={domain.name}
+                iconBg={domain.iconBg}
+                className="text-center"
+                index={i}
+              />
             ))}
           </div>
         </div>

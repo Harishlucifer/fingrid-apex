@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
+import ModernCard from './ModernCard';
 
 function useScrollAnimation() {
   const ref = useRef(null);
@@ -57,7 +58,7 @@ export default function ProductDetailPage({
         </div>
       </section>
 
-      {/* Features */}
+      {/* Features — Modern Cards */}
       {features.length > 0 && (
         <section className="py-24 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -65,13 +66,15 @@ export default function ProductDetailPage({
               <h2 className="text-4xl font-bold text-navy mb-4">Key Features</h2>
               <p className="text-gray-500 text-lg max-w-2xl mx-auto">Explore the capabilities that make this solution stand out.</p>
             </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 card-grid">
               {features.map((f, i) => (
-                <div key={f.title} className="animate-on-scroll opacity-0 translate-y-8 transition-all duration-700 group p-8 bg-white rounded-2xl border border-gray-100 hover:border-navy/20 hover:shadow-xl hover:-translate-y-2" style={{ transitionDelay: `${i * 80}ms` }}>
-                  <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">{f.icon}</div>
-                  <h3 className="text-xl font-bold text-navy mb-3">{f.title}</h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">{f.desc}</p>
-                </div>
+                <ModernCard
+                  key={f.title}
+                  icon={f.icon}
+                  title={f.title}
+                  description={f.desc}
+                  index={i}
+                />
               ))}
             </div>
           </div>

@@ -81,7 +81,29 @@ export default function Contact() {
               </p>
 
               <div className="space-y-6">
-                {[
+                {/* Contact Person */}
+              <div className="flex items-start gap-4 group mb-2">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-navy to-blue flex items-center justify-center text-white flex-shrink-0 group-hover:shadow-lg group-hover:shadow-blue/25 group-hover:-translate-y-0.5 transition-all duration-300">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 font-medium">Contact Person</p>
+                  <p className="text-navy font-semibold">Sreedhar Ramasamy, Founder &amp; CEO</p>
+                </div>
+              </div>
+
+              {[
+                  {
+                    icon: (
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                    ),
+                    label: 'Mobile',
+                    value: '+91 88835 65000',
+                  },
                   {
                     icon: (
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -89,16 +111,7 @@ export default function Contact() {
                       </svg>
                     ),
                     label: 'Email',
-                    value: 'hello@fingrid.ai',
-                  },
-                  {
-                    icon: (
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                      </svg>
-                    ),
-                    label: 'Phone',
-                    value: '+91 98400 98400',
+                    value: 'sreedhar@loanwiser.in',
                   },
                   {
                     icon: (
@@ -107,8 +120,8 @@ export default function Contact() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                     ),
-                    label: 'Location',
-                    value: 'San Francisco, CA',
+                    label: 'Address',
+                    value: 'Inforvio Technologies Pvt Ltd, C6, Lacasa Apartment, GRG Nagar, Coimbatore 641014',
                   },
                 ].map((info) => (
                   <div key={info.label} className="flex items-start gap-4 group">
@@ -247,28 +260,18 @@ export default function Contact() {
       {/* Map-like decorative section */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid sm:grid-cols-3 gap-6 animate-on-scroll opacity-0 translate-y-8 transition-all duration-700">
-            {[
-              { city: 'San Francisco', country: 'USA', type: 'Headquarters' },
-              { city: 'London', country: 'UK', type: 'European Office' },
-              { city: 'Singapore', country: 'SG', type: 'APAC Office' },
-            ].map((office, i) => (
-              <div
-                key={office.city}
-                className="group p-8 rounded-2xl bg-gradient-to-br from-gray-50 to-white border border-gray-100 hover:border-blue/20 hover:shadow-xl transition-all duration-500 hover:-translate-y-1 text-center"
-                style={{ transitionDelay: `${i * 100}ms` }}
-              >
-                <div className="w-12 h-12 bg-gradient-to-br from-navy to-blue rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:shadow-lg group-hover:shadow-blue/20 transition-all duration-300">
-                  <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </div>
-                <p className="text-xs font-semibold text-blue uppercase tracking-wider mb-1">{office.type}</p>
-                <h3 className="text-xl font-bold text-navy">{office.city}</h3>
-                <p className="text-gray-500 text-sm">{office.country}</p>
+          <div className="animate-on-scroll opacity-0 translate-y-8 transition-all duration-700">
+            <div className="group p-8 rounded-2xl bg-gradient-to-br from-gray-50 to-white border border-gray-100 hover:border-blue/20 hover:shadow-xl transition-all duration-500 hover:-translate-y-1 text-center max-w-lg mx-auto">
+              <div className="w-12 h-12 bg-gradient-to-br from-navy to-blue rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:shadow-lg group-hover:shadow-blue/20 transition-all duration-300">
+                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
               </div>
-            ))}
+              <p className="text-xs font-semibold text-blue uppercase tracking-wider mb-1">Headquarters</p>
+              <h3 className="text-xl font-bold text-navy">Coimbatore, India</h3>
+              <p className="text-gray-500 text-sm mt-2">Inforvio Technologies Pvt Ltd, C6, Lacasa Apartment, GRG Nagar, Coimbatore 641014</p>
+            </div>
           </div>
         </div>
       </section>

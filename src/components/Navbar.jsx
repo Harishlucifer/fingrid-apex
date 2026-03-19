@@ -45,8 +45,11 @@ const navItems = [
           { label: 'Integrate', path: '/products/network/integrate' },
         ],
       },
+      { label: 'FinGrid AI', path: '/products/agentic-ai' },
     ],
   },
+  { label: 'Innovation', path: '/innovation' },
+  { label: 'GTM Strategy', path: '/gtm-strategy' },
   { label: 'About', path: '/about' },
   { label: 'Contact', path: '/contact' },
 ];

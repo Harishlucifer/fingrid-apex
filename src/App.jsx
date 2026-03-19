@@ -37,6 +37,13 @@ import NetworkPage from './pages/network/Network';
 import DealRoom from './pages/network/DealRoom';
 import Integrate from './pages/network/Integrate';
 
+// FinGrid AI
+import AgenticAI from './pages/AgenticAI';
+
+// Innovation & GTM
+import Innovation from './pages/Innovation';
+import GTMStrategy from './pages/GTMStrategy';
+
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -85,6 +92,13 @@ function App() {
             <Route path="/products/network/network" element={<NetworkPage />} />
             <Route path="/products/network/deal-room" element={<DealRoom />} />
             <Route path="/products/network/integrate" element={<Integrate />} />
+
+            {/* FinGrid AI */}
+            <Route path="/products/agentic-ai" element={<AgenticAI />} />
+
+            {/* Innovation & GTM */}
+            <Route path="/innovation" element={<Innovation />} />
+            <Route path="/gtm-strategy" element={<GTMStrategy />} />
 
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
