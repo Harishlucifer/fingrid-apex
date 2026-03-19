@@ -51,7 +51,6 @@ const navItems = [
   { label: 'Innovation', path: '/innovation' },
   { label: 'GTM Strategy', path: '/gtm-strategy' },
   { label: 'About', path: '/about' },
-  { label: 'Contact', path: '/contact' },
 ];
 
 function DropdownItem({ item, level = 0, onClose }) {
