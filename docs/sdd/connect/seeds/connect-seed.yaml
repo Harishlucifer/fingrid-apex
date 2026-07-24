@@ -1,0 +1,271 @@
+# Fingrid Connect — L4b seed (configseed pipeline, managed_by=CODE)
+# Generated from docs/sdd/connect/04b-rendering-seed-map.md — do not hand-edit without
+# updating that map in the same PR (L4b Rule 5).
+#
+# RESOLVED 2026-07-22 (owner ruling): Connect does not gate by OS at all. nav below is a
+# single OS-independent entry, not a per-OS list — this also dissolves the earlier Legal
+# Agency / Property Agency mapping question (01-product-spec.md OQ #2), since nothing in
+# Connect is OS-scoped for any entity type.
+
+module:
+  code: CONNECT
+  name: Fingrid Connect
+  nav:
+    - os: ALL  # platform-level — visible regardless of tenant product line (owner ruling 2026-07-22)
+      section: Marketplace
+      landing: connect-dashboard
+  roles_visible:
+    # Entity-type-derived, NOT yet cross-checked against the real Fingrid RBAC role registry
+    # (01-product-spec.md Human Verification Ledger item — still open).
+    - DSA_INDIVIDUAL
+    - DSA_FIRM
+    - LSP_AGGREGATOR
+    - BUSINESS_CORRESPONDENT
+    - NBFC
+    - BANK
+    - HFC
+    - COLENDER_NBFC
+    - VERIFICATION_AGENCY
+    - COLLECTION_AGENCY
+    - LEGAL_AGENCY
+    - PROPERTY_AGENCY
+
+lookups:
+  # Already seeded directly by migration 20260710120000_FINGRID_CONNECT_ONBOARDING via
+  # INSERT IGNORE — reproduced here only so this seed file is self-describing/idempotent,
+  # not a second seed pass (natural-key upsert makes re-running harmless either way).
+  - group: CHANNEL_ENTITY_TYPE
+    values:
+      - {code: dsa_ind, label: "DSA — Individual", config: {role: DSA, category: SOURCING}}
+      - {code: dsa_firm, label: "DSA — Firm / LLP", config: {role: DSA, category: SOURCING}}
+      - {code: lsp, label: "LSP / Aggregator", config: {role: LSP, category: SOURCING}}
+      - {code: bc, label: "Business Correspondent", config: {role: BC, category: SOURCING}}
+      - {code: nbfc, label: NBFC, config: {role: OWNBOOK, category: MERCHANT}}
+      - {code: bank, label: Bank, config: {role: OWNBOOK, category: MERCHANT}}
+      - {code: hfc, label: HFC, config: {role: OWNBOOK, category: MERCHANT}}
+      - {code: colender, label: "Co-Lending NBFC", config: {role: COLENDER, category: MERCHANT}}
+      - {code: verif_agency, label: "Verification Agency", config: {role: SERVICE, category: SERVICING}}
+      - {code: collection_agency, label: "Collection Agency", config: {role: SERVICE, category: SERVICING}}
+      - {code: legal_agency, label: "Legal Agency", config: {role: SERVICE, category: SERVICING}}
+      - {code: property_agency, label: "Property Agency", config: {role: SERVICE, category: SERVICING}}
+  - group: PERSONAL_EMAIL_DOMAIN
+    values:
+      - {code: gmail.com, label: gmail.com}
+      - {code: yahoo.com, label: yahoo.com}
+      - {code: hotmail.com, label: hotmail.com}
+      - {code: outlook.com, label: outlook.com}
+      - {code: rediffmail.com, label: rediffmail.com}
+      - {code: ymail.com, label: ymail.com}
+      - {code: icloud.com, label: icloud.com}
+      - {code: protonmail.com, label: protonmail.com}
+      - {code: live.com, label: live.com}
+      - {code: msn.com, label: msn.com}
+
+workflows:
+  - code: CONNECT_ONBOARDING
+    entity: core_channel_user
+    stages:
+      - code: IDENTITY
+        steps:
+          - {code: ENTER_EMAIL, actor: END_USER, render: FORM_BUILDER, form: CONNECT_ONBOARD_IDENTITY_FORM}
+          - {code: COMPANY_RESOLUTION, actor: END_USER, render: CUSTOM, component: CompanyResolutionSearch}
+          - {code: ENTITY_TYPE, actor: END_USER, render: FORM_BUILDER, form: CONNECT_ONBOARD_ENTITY_TYPE_FORM}
+          - {code: VERIFY_EMAIL_OTP, actor: END_USER, render: HYBRID, form: CONNECT_ONBOARD_IDENTITY_FORM, widget: OtpInput}
+      - code: YOUR_DETAILS
+        steps:
+          - {code: DETAILS, actor: END_USER, render: FORM_BUILDER, form: CONNECT_ONBOARD_DETAILS_FORM}
+          - {code: VERIFY_MOBILE_OTP, actor: END_USER, render: HYBRID, form: CONNECT_ONBOARD_DETAILS_FORM, widget: OtpInput}
+      - code: PREFERENCES
+        steps:
+          - {code: PREFS, actor: END_USER, render: FORM_BUILDER, form: CONNECT_ONBOARD_PREFS_FORM}
+      - code: COMPANY
+        steps:
+          - {code: COMPANY_CHOICE, actor: END_USER, render: FORM_BUILDER, form: CONNECT_ONBOARD_COMPANY_LINK_FORM}
+      - code: WELCOME
+        steps:
+          - {code: WELCOME_VIEW, actor: END_USER, render: CUSTOM, component: WelcomeAccessSummary}
+
+  - code: CONNECT_COMPANY_PROFILE
+    entity: core_channel
+    stages:
+      - code: LEGAL_IDENTITY
+        steps:
+          - {code: C1, actor: CHANNEL_OWNER, render: FORM_BUILDER, form: CONNECT_COMPANY_LEGAL_FORM}
+      - code: OPERATIONS
+        steps:
+          - {code: C2, actor: CHANNEL_OWNER, render: HYBRID, form: CONNECT_COMPANY_OPERATIONS_FORM, widget: DynamicTable}
+      - code: STAFF
+        steps:
+          - {code: C3, actor: CHANNEL_OWNER, render: HYBRID, form: CONNECT_COMPANY_STAFF_FORM, widget: DynamicTable}
+      - code: EMPANELMENTS
+        steps:
+          - {code: C4, actor: CHANNEL_OWNER, render: HYBRID, form: CONNECT_COMPANY_EMPANELMENT_FORM, widget: CredentialChecklist}
+      - code: DIGITAL
+        # entry condition: entity_type = lsp (BR-16) — NOT yet enforced anywhere; see
+        # 04b-rendering-seed-map.md's carried-forward gap note.
+        steps:
+          - {code: C5, actor: CHANNEL_OWNER, render: FORM_BUILDER, form: CONNECT_COMPANY_DIGITAL_FORM, entry_condition: "entity_type = lsp"}
+      - code: VERIFY
+        steps:
+          - {code: C6, actor: CHANNEL_OWNER, render: CUSTOM, component: VerifyAndPublish}
+
+  - code: CONNECT_REQUIREMENT
+    entity: core_partnership_listing
+    stages:
+      - code: TYPE_CONTEXT
+        steps:
+          - {code: R1, actor: CHANNEL_OWNER, render: FORM_BUILDER, form: CONNECT_REQUIREMENT_TYPE_FORM}
+      - code: WHAT_YOU_NEED
+        steps:
+          - {code: R2, actor: CHANNEL_OWNER, render: FORM_BUILDER, form: CONNECT_REQUIREMENT_NEED_FORM}
+      # R3 "What You Offer" omitted — CONFIRMED not required (owner ruling 2026-07-22),
+      # removed from connect-flow-prototype.html at this pass, not just Out of Scope.
+      - code: CRITERIA
+        steps:
+          - {code: R4, actor: CHANNEL_OWNER, render: FORM_BUILDER, form: CONNECT_REQUIREMENT_CRITERIA_FORM}
+      - code: REVIEW
+        steps:
+          - {code: R5, actor: CHANNEL_OWNER, render: CUSTOM, component: RequirementReviewPublish}
+
+  - code: CONNECT_MATCH_RESPONSE
+    entity: core_partnership_match
+    stages:
+      - code: GENERATION
+        steps:
+          - {code: CRON_SCORE, actor: SYSTEM, render: N/A, note: "no screen — see BR-08"}
+      - code: REVIEW
+        steps:
+          - {code: MATCH_CARDS, actor: CHANNEL_OWNER, render: CUSTOM, component: MatchReviewCards}
+          - {code: DIRECTORY_BROWSE, actor: ANY_CHANNEL, render: CUSTOM, component: DirectoryBrowse}
+      - code: REQUEST
+        steps:
+          - {code: SEND_REQUEST, actor: ANY_CHANNEL, render: CUSTOM, component: DirectoryBrowse, note: "inline action, no standalone form"}
+      - code: DECISION
+        steps:
+          - {code: INBOX, actor: RECIPIENT_CHANNEL, render: CUSTOM, component: ConnectRequestInbox}
+          - {code: PARTNERS_LIST, actor: ANY_CHANNEL, render: CUSTOM, component: PartnersList, note: "FLIPPED from L3's provisional FORM_BUILDER — see 04b map Step 1"}
+
+forms:
+  - code: CONNECT_ONBOARD_IDENTITY_FORM
+    entity: core_channel
+    fields:
+      - {name: email, column: "(pre-verification, resolved to core_channel domain match)", type: TEXT, rules: {required: true, format: email}}
+
+  - code: CONNECT_ONBOARD_ENTITY_TYPE_FORM
+    entity: core_channel
+    fields:
+      - {name: entityType, column: core_channel.entity_type, type: SELECT, lookup: CHANNEL_ENTITY_TYPE, rules: {required: true}}
+
+  - code: CONNECT_ONBOARD_DETAILS_FORM
+    entity: core_channel_user
+    fields:
+      - {name: designation, column: core_channel_user.designation, type: TEXT, rules: {required: true}}
+      - {name: department, column: core_channel_user.department, type: SELECT, rules: {required: false}}
+      - {name: territory, column: core_channel_user_territory.territory_name, type: ENTITY_REF, rules: {required: true, min: 1}, multi: true}
+      - {name: loanType, column: core_channel_user_loan_type.loan_type_name, type: ENTITY_REF, rules: {required: false}, multi: true}
+      - {name: linkedinUrl, column: core_channel_user.linkedin_url, type: TEXT, rules: {required: false, format: url}}
+
+  - code: CONNECT_ONBOARD_PREFS_FORM
+    entity: core_channel_user
+    fields:
+      - {name: mobileVisibility, column: "core_channel_user.preferences.mobile_visibility", type: SELECT, rules: {required: false}}
+      - {name: emailVisibility, column: "core_channel_user.preferences.email_visibility", type: SELECT, rules: {required: false}}
+      - {name: linkedinVisibility, column: "core_channel_user.preferences.linkedin_visibility", type: SELECT, rules: {required: false}}
+      - {name: territoryVisibility, column: "core_channel_user.preferences.territory_visibility", type: SELECT, rules: {required: false}}
+      - {name: lookingFor, column: "core_channel_user.preferences.looking_for", type: SELECT, rules: {required: false}}
+      - {name: notifyEmail, column: "core_channel_user.preferences.notify_email", type: SELECT, rules: {required: false}}
+
+  - code: CONNECT_ONBOARD_COMPANY_LINK_FORM
+    entity: onb_entity
+    fields:
+      - {name: mode, column: "(routing only, not persisted)", type: SELECT, rules: {required: true, oneof: [new, join]}}
+      - {name: legalName, column: onb_entity.legal_name, type: TEXT, rules: {required: true}}
+      - {name: pan, column: onb_entity.primary_id, type: TEXT, rules: {required: true}}
+      - {name: cin, column: onb_entity.secondary_id, type: TEXT, rules: {required: false}}
+
+  - code: CONNECT_COMPANY_LEGAL_FORM
+    entity: onb_entity
+    fields:
+      - {name: legalName, column: onb_entity.legal_name, type: TEXT, rules: {required: true}}
+      - {name: pan, column: onb_entity.primary_id, type: TEXT, rules: {required: true}}
+      - {name: cin, column: onb_entity.secondary_id, type: TEXT, rules: {required: false}}
+
+  - code: CONNECT_COMPANY_OPERATIONS_FORM
+    entity: core_channel
+    fields:
+      - {name: aum, column: "core_channel.data.connect_profile.aum", type: MONEY, rules: {required: false}}
+      - {name: monthlyDisbursal, column: "core_channel.data.connect_profile.monthly_disbursal", type: MONEY, rules: {required: false}}
+      - {name: branches, column: "core_channel.data.connect_profile.branches", type: DYNAMIC_TABLE, rules: {required: false}, note: "corrected — not onb_location, see 04-db-schema.md"}
+      - {name: geography, column: core_channel_territory.territory_id, type: ENTITY_REF, rules: {required: false}, multi: true}
+      - {name: products, column: core_channel_loan_type.loan_type_id, type: ENTITY_REF, rules: {required: false}, multi: true, note: "binds via channel_territory_id, not channel_id directly"}
+
+  - code: CONNECT_COMPANY_STAFF_FORM
+    entity: core_channel
+    fields:
+      - {name: totalStaff, column: "core_channel.data.connect_profile.total_staff", type: NUMBER, rules: {required: false}}
+      - {name: fieldStaffCount, column: "core_channel.data.connect_profile.field_staff_count", type: NUMBER, rules: {required: false}}
+      - {name: staffByRole, column: "core_channel.data.connect_profile.staff_by_role", type: DYNAMIC_TABLE, rules: {required: false}}
+
+  - code: CONNECT_COMPANY_EMPANELMENT_FORM
+    entity: onb_empanelment
+    fields:
+      - {name: empanelments, column: onb_empanelment, type: DYNAMIC_TABLE, rules: {required: false}}
+      - {name: credentials, column: onb_document, type: CREDENTIAL_CHECKLIST, rules: {required: false}, note: "BR-03 mandatory type highlighted per entity_type"}
+
+  - code: CONNECT_COMPANY_DIGITAL_FORM
+    entity: core_channel
+    fields:
+      - {name: capabilities, column: "core_channel.data.connect_profile.capabilities", type: JSON, rules: {required: false}}
+
+  - code: CONNECT_REQUIREMENT_TYPE_FORM
+    entity: core_partnership_listing
+    fields:
+      - {name: partnershipType, column: core_partnership_listing.partnership_type, type: SELECT, rules: {required: true}}
+      - {name: context, column: "core_partnership_listing.data.context", type: TEXTAREA, rules: {required: false}}
+      - {name: products, column: "core_partnership_listing.data.products", type: SELECT, rules: {required: false}, multi: true}
+
+  - code: CONNECT_REQUIREMENT_NEED_FORM
+    entity: core_partnership_listing
+    fields:
+      - {name: needGeography, column: "core_partnership_listing.data.need.geography", type: ENTITY_REF, rules: {required: false}, multi: true}
+      - {name: targetVolume, column: "core_partnership_listing.data.need.target_volume", type: TEXT, rules: {required: false}}
+      - {name: ticketMin, column: "core_partnership_listing.data.need.ticket_min", type: MONEY, rules: {required: false}}
+      - {name: ticketMax, column: "core_partnership_listing.data.need.ticket_max", type: MONEY, rules: {required: false}}
+      - {name: casesPerMonth, column: "core_partnership_listing.data.need.cases_per_month", type: NUMBER, rules: {required: false}}
+      - {name: expectedTat, column: "core_partnership_listing.data.need.expected_tat", type: TEXT, rules: {required: false}}
+
+  - code: CONNECT_REQUIREMENT_CRITERIA_FORM
+    entity: core_partnership_listing
+    fields:
+      - {name: minVerificationTier, column: "core_partnership_listing.data.criteria.min_verification_tier", type: SELECT, rules: {required: false}}
+      - {name: minAum, column: "core_partnership_listing.data.criteria.min_aum", type: MONEY, rules: {required: false}}
+      - {name: minSourcingCapacity, column: "core_partnership_listing.data.criteria.min_sourcing_capacity", type: MONEY, rules: {required: false}}
+      - {name: minBranches, column: "core_partnership_listing.data.criteria.min_branches", type: NUMBER, rules: {required: false}}
+      - {name: minFieldStaff, column: "core_partnership_listing.data.criteria.min_field_staff", type: NUMBER, rules: {required: false}}
+      - {name: geography, column: "core_partnership_listing.data.criteria.geography", type: ENTITY_REF, rules: {required: false}, multi: true}
+      - {name: certifications, column: "core_partnership_listing.data.criteria.certifications", type: SELECT, rules: {required: false}, multi: true}
+
+rollback:
+  delete:
+    forms:
+      - CONNECT_ONBOARD_IDENTITY_FORM
+      - CONNECT_ONBOARD_ENTITY_TYPE_FORM
+      - CONNECT_ONBOARD_DETAILS_FORM
+      - CONNECT_ONBOARD_PREFS_FORM
+      - CONNECT_ONBOARD_COMPANY_LINK_FORM
+      - CONNECT_COMPANY_LEGAL_FORM
+      - CONNECT_COMPANY_OPERATIONS_FORM
+      - CONNECT_COMPANY_STAFF_FORM
+      - CONNECT_COMPANY_EMPANELMENT_FORM
+      - CONNECT_COMPANY_DIGITAL_FORM
+      - CONNECT_REQUIREMENT_TYPE_FORM
+      - CONNECT_REQUIREMENT_NEED_FORM
+      - CONNECT_REQUIREMENT_CRITERIA_FORM
+    workflows:
+      - CONNECT_ONBOARDING
+      - CONNECT_COMPANY_PROFILE
+      - CONNECT_REQUIREMENT
+      - CONNECT_MATCH_RESPONSE
+    module: CONNECT
+    # Note: lookups (CHANNEL_ENTITY_TYPE, PERSONAL_EMAIL_DOMAIN) are NOT deleted on rollback
+    # here — they're owned by the v1.0 DB migration's INSERT IGNORE, not by this seed file.

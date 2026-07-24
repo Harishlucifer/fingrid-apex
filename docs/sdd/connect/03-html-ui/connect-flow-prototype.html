@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fingrid Connect — Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700&family=Crimson+Pro:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+<!--
+  SDD Layer 3 — connect-flow-prototype.html (mandatory interactive click-through, sdd-03-html-ui)
+  Canonical prototype for Fingrid Connect — see docs/sdd/connect/03-html-ui-reconciliation.md.
+
+  RE-SKINNED AGAIN 2026-07-22 (round 3 — "do it like shared HTML"): rounds 1–2 tried the real
+  fingrid-apex marketing theme (navy/blue/mint, Inter, gradients) and then a structural
+  cleanup, but the direction given was to match the actual look of the two reference files
+  shared in chat — `fingrid-connect-v5.html` and `stage1_email (4).html` — not a reinterpretation.
+  This pass ports THEIR real design tokens verbatim: teal `#00B09B` primary, Crimson Pro serif
+  headings, Work Sans body, their card/button/pill recipes. The structural fixes from round 2
+  (no persistent chrome during a wizard, dot-stepper not tabs) are KEPT — `stage1_email` itself
+  uses that exact pattern (centered stage-wrap, no topbar/rail at all), so that decision is
+  independently validated by the reference files, not overwritten by them. Also kept: every
+  business-rule fix already verified against 02-feature-spec.md (R3 removed, BR-16 LSP-only
+  skip, BR-21 contact-gate consistency, US-08/09 Requests+Partners screens) — the shared files
+  predate those fixes and don't have them; porting their CSS, not their JS/markup, avoids
+  reintroducing bugs already closed out.
+  BR-XX / US-XX / EC-XX comments below reference docs/sdd/connect/02-feature-spec.md v1.0.
+-->
+<style>
+:root{
+  /* Ported verbatim from fingrid-connect-v5.html / stage1_email (4).html — not reinterpreted */
+  --navy:#1A2332; --navy-d:#131b28; --navy-l:#3D5166; --navy-ink:#1A2332;
+  --teal:#00B09B; --teal-d:#00907E; --ts:#E4F7F5; --tm:#9FE0D8;
+  --blue:#2355D8; --blue-d:#1a45b0; --bs:#EEF2FF; --bm:#C7D2FB;
+  --mint:#00B09B; --mint-d:#00907E; --mint-l:#5df0ab;
+  --ink:#1A2332; --slate:#3D5166; --muted:#6B7D8F; --faint:#A8B8C8;
+  --line:#DDE3EA; --line2:#e8edf3; --bg:#F1F4F8; --surf:#ffffff;
+  --req:#ef6c37; --green:#0A7A52; --gs:#E8F8F1; --gm:#7DD9B0;
+  --amber:#C97A06; --as:#FFF8E6; --purple:#6D28D9;
+  --sh:0 1px 4px rgba(0,0,0,.07);
+  --shm:0 4px 18px rgba(0,0,0,.1);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:"Work Sans","Segoe UI",system-ui,-apple-system,sans-serif;color:var(--ink);background:var(--bg);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+h1,h2,h3,h4{font-family:"Crimson Pro",serif;}
+button{font-family:inherit;cursor:pointer;}
+/* ── brand utilities, ported to the teal/Crimson-Pro palette ── */
+.grad-text{background:linear-gradient(135deg,var(--navy) 0%,var(--blue) 50%,var(--teal) 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.grad-bg{background:linear-gradient(135deg,#0F1D2E 0%,#1A3A5C 55%,#0E5A4E 100%);}
+.grad-cta{background:var(--teal);color:#fff;border:none;transition:.14s;}
+.grad-cta:hover{background:var(--teal-d);}
+.modern-card{position:relative;background:#fff;border-radius:11px;transition:.2s;box-shadow:var(--sh);}
+.modern-card:hover{box-shadow:var(--shm);}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+[hidden]{display:none!important;}
+
+/* Demo bar */
+.demobar{background:#0f1c33;display:flex;align-items:center;gap:8px;padding:8px 16px;flex-wrap:wrap;position:sticky;top:0;z-index:400;}
+.demobar b{color:#fff;font-size:13px;font-weight:800;}
+.demobar b i{color:var(--mint);font-style:normal;}
+.demobar .tag{font-size:10px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;border-left:1px solid rgba(255,255,255,.16);padding-left:10px;}
+.demobar .sp{flex:1;}
+.demobar .lbl{font-size:9px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;}
+.jb{font-size:12px;font-weight:600;padding:5px 11px;border-radius:7px;border:1.5px solid rgba(255,255,255,.16);background:transparent;color:rgba(255,255,255,.75);}
+.jb:hover{border-color:var(--mint);color:var(--mint);}
+.jb.r{border-color:transparent;color:rgba(255,255,255,.45);}
+
+.logo{display:inline-flex;align-items:center;gap:9px;}
+.logo-mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--navy) 40%,var(--mint) 100%);position:relative;flex-shrink:0;}
+.logo-mark::after{content:"";position:absolute;left:7px;bottom:7px;width:9px;height:9px;background:var(--mint);border-radius:2px;}
+.logo-txt{font-size:17px;font-weight:800;letter-spacing:-.02em;color:var(--navy-ink);}
+.logo-txt i{color:var(--mint-d);font-style:normal;}
+
+/* ── Auth screens ── */
+.auth{min-height:calc(100vh - 39px);display:flex;align-items:center;justify-content:center;padding:40px 20px;background:linear-gradient(135deg,#0F1D2E 0%,#1A3A5C 60%,#00B09B 100%);}
+.auth-orb{position:fixed;border-radius:50%;filter:blur(120px);pointer-events:none;}
+.auth-card{background:#fff;border-radius:18px;box-shadow:0 24px 70px rgba(0,0,0,.4);width:100%;max-width:440px;padding:38px 36px;position:relative;z-index:2;}
+.auth-card.wide{max-width:920px;}
+.auth-logo{display:flex;justify-content:center;margin-bottom:22px;}
+.auth-h{font-size:24px;font-weight:800;text-align:center;letter-spacing:-.02em;}
+.auth-sub{font-size:13.5px;color:var(--slate);text-align:center;margin:6px 0 26px;}
+.auth-field{margin-bottom:16px;}
+.auth-field label{display:block;font-size:12px;font-weight:700;color:var(--slate);margin-bottom:6px;}
+.auth-field input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;font-family:inherit;}
+.auth-field input:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(43,74,126,.1);}
+.auth-btn{width:100%;padding:13px;border-radius:10px;background:var(--teal);color:#fff;border:none;font-size:14.5px;font-weight:700;margin-top:6px;transition:.3s cubic-bezier(.16,1,.3,1);box-shadow:0 4px 15px rgba(0,176,155,.22);}
+.auth-btn:hover{background:var(--teal-d);box-shadow:0 8px 24px rgba(0,176,155,.28);transform:translateY(-1px);}
+.auth-alt{text-align:center;font-size:13px;color:var(--slate);margin-top:18px;}
+.auth-alt a{color:var(--blue);font-weight:700;cursor:pointer;}
+.auth-hint{font-size:11.5px;color:var(--muted);text-align:center;margin-top:14px;background:var(--bg);border:1px dashed var(--line);border-radius:8px;padding:7px;}
+.home-hero{text-align:center;color:#fff;}
+.home-pill{display:inline-flex;align-items:center;gap:8px;padding:7px 15px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);border-radius:999px;color:var(--mint);font-size:12.5px;font-weight:600;margin-bottom:22px;}
+.home-pill .d{width:8px;height:8px;border-radius:50%;background:var(--mint);}
+.home-hero h1{font-size:clamp(30px,5vw,48px);font-weight:800;letter-spacing:-.03em;line-height:1.08;margin-bottom:16px;text-wrap:balance;}
+.home-hero h1 span{background:linear-gradient(100deg,var(--mint),#7fdcff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.home-hero p{font-size:16px;color:#c5d2e6;max-width:560px;margin:0 auto 30px;}
+.home-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+.home-primary{padding:14px 28px;border-radius:12px;background:var(--teal);color:#fff;font-weight:800;font-size:15px;border:none;display:inline-flex;gap:8px;align-items:center;box-shadow:0 4px 15px rgba(0,176,155,.22);transition:.3s cubic-bezier(.16,1,.3,1);}
+.home-primary:hover{background:var(--teal-d);box-shadow:0 8px 24px rgba(0,176,155,.28);transform:translateY(-2px);}
+.home-ghost{padding:14px 28px;border-radius:12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);color:#fff;font-weight:700;font-size:15px;}
+.home-ghost:hover{background:rgba(255,255,255,.18);}
+.home-feats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:46px;max-width:820px;}
+.home-feat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:16px;text-align:left;}
+.home-feat .fi{font-size:22px;}
+.home-feat h4{font-size:13.5px;color:#fff;margin:8px 0 3px;}
+.home-feat p{font-size:11.5px;color:#9fb0c9;margin:0;}
+@media(max-width:720px){.home-feats{grid-template-columns:1fr 1fr;}}
+
+/* ── App shell ── */
+.shell{min-height:calc(100vh - 39px);display:flex;flex-direction:column;}
+.topbar{background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 18px;height:60px;position:sticky;top:39px;z-index:60;}
+.tb-back{width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--slate);display:flex;align-items:center;justify-content:center;}
+.tb-select{min-width:150px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;color:var(--muted);font-size:13px;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.tb-search{flex:1;max-width:520px;padding:9px 14px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit;color:var(--ink);}
+.tb-search:focus{outline:none;border-color:var(--navy);}
+.tb-sp{flex:1;}
+.tb-date{text-align:right;line-height:1.2;}
+.tb-date .l{font-size:10.5px;color:var(--muted);}
+.tb-date .v{font-size:13px;font-weight:700;color:var(--slate);}
+.tb-ic{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--slate);}
+.tb-ic:hover{background:var(--bg);}
+.tb-user{display:flex;align-items:center;gap:9px;padding-left:14px;border-left:1px solid var(--line);height:60px;}
+.tb-av{width:34px;height:34px;border-radius:50%;background:var(--bg);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--slate);}
+.tb-user .nm{font-size:13.5px;font-weight:700;}
+.tb-signup{font-size:12.5px;font-weight:700;color:var(--amber);background:var(--as);border:1px solid #f0d9a6;border-radius:8px;padding:6px 12px;}
+
+.body{flex:1;display:flex;}
+.rail{width:92px;background:#fff;border-right:1px solid var(--line);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.rail-item{display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;color:var(--slate);cursor:pointer;border-left:3px solid transparent;}
+.rail-item svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.rail-item span{font-size:10.5px;font-weight:600;}
+.rail-item:hover{background:var(--bg);color:var(--navy);}
+.rail-item.on{color:var(--teal);border-left-color:var(--teal);background:linear-gradient(90deg,rgba(0,176,155,.08),transparent);}
+.shell[data-mode="signup"] .rail-item{opacity:.4;pointer-events:none;}
+
+.main{flex:1;padding:22px 28px 40px;min-width:0;}
+/* RESTRUCTURED 2026-07-22: a persistent icon-rail during a linear signup/profile/requirement
+   wizard is an enterprise-app tell — hide it there, keep it only for the logged-in
+   Dashboard/Directory/Matches/Requests/Partners home base (a nav makes sense once there's
+   somewhere to navigate between). Wizard content centers as its own column instead. */
+.shell.is-workflow .rail{display:none;}
+.shell.is-workflow .main{max-width:820px;margin:0 auto;padding:36px 24px 56px;}
+.shell.is-workflow .page-head{display:none;}
+.page-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px;gap:12px;}
+.page-title{font-size:19px;font-weight:800;letter-spacing:.01em;text-transform:uppercase;}
+.crumb{font-size:13px;color:var(--muted);}
+.crumb b{color:var(--slate);font-weight:600;}
+
+.app-foot{background:#fff;border-top:1px solid var(--line);display:flex;justify-content:space-between;padding:14px 28px;font-size:11.5px;color:var(--muted);flex-wrap:wrap;gap:8px;}
+
+/* ── Stage tabs (STANDARD FORMAT) ── */
+.wf-card{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:var(--sh);overflow:hidden;}
+/* RESTRUCTURED 2026-07-22 (boss feedback round 2): the old .stage-tabs was a boxed
+   segmented tab-bar — a hallmark of internal enterprise wizards. Replaced with a numbered
+   dot-and-line stepper (mirrors stage1_email's proven customer-facing .stage-nav pattern),
+   centered above a single content column instead of a full-width admin tab strip. */
+.stage-tabs{display:flex;align-items:flex-start;justify-content:center;gap:0;padding:26px 30px 22px;overflow-x:auto;}
+.stage-tab{display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0;}
+.stage-tab .st-dot{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--faint);background:#fff;flex-shrink:0;transition:.2s;}
+.stage-tab .st-label{font-size:12.5px;font-weight:600;color:var(--faint);white-space:nowrap;transition:.2s;}
+.stage-tab .st-line{width:32px;height:2px;background:var(--line);margin:0 6px;flex-shrink:0;align-self:center;transition:.2s;}
+.stage-tab:last-child .st-line{display:none;}
+.stage-tab.done .st-dot{background:var(--teal);border-color:transparent;color:#fff;}
+.stage-tab.done .st-label{color:var(--slate);}
+.stage-tab.done .st-line{background:var(--teal);}
+.stage-tab.active .st-dot{border-color:var(--teal);color:var(--teal);box-shadow:0 0 0 4px rgba(0,176,155,.12);}
+.stage-tab.active .st-label{color:var(--ink);font-weight:700;}
+@media(max-width:680px){.stage-tab .st-label{display:none;}.stage-tab .st-line{width:16px;}}
+.wf-body{padding:26px 30px 12px;}
+.step-head{display:flex;align-items:center;gap:11px;margin-bottom:22px;}
+.step-num{width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.step-name{font-size:16px;font-weight:700;}
+.sub-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:20px 0 14px;padding-bottom:7px;border-bottom:1px solid var(--line2);}
+.sub-lbl:first-child{margin-top:0;}
+
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 24px;}
+.grid.g2{grid-template-columns:repeat(2,1fr);}
+.grid.g3{grid-template-columns:repeat(3,1fr);}
+.col2{grid-column:span 2;}.col3{grid-column:span 3;}.col4{grid-column:span 4;}
+@media(max-width:1050px){.grid,.grid.g3{grid-template-columns:repeat(2,1fr);}.col3,.col4{grid-column:span 2;}}
+@media(max-width:620px){.grid,.grid.g2,.grid.g3{grid-template-columns:1fr;}.col2,.col3,.col4{grid-column:span 1;}}
+
+.fld{display:flex;flex-direction:column;gap:6px;}
+.fld label{font-size:13px;font-weight:600;color:var(--slate);}
+.fld label .req{color:var(--req);margin-left:1px;}
+.fld input,.fld select,.fld textarea{padding:11px 13px;border:1px solid var(--line);border-radius:9px;font-size:13.5px;font-family:inherit;color:var(--ink);background:#fff;transition:.14s;width:100%;}
+.fld textarea{resize:vertical;min-height:78px;}
+.fld input::placeholder,.fld textarea::placeholder{color:var(--muted);}
+.fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(43,74,126,.09);}
+.fld input[readonly]{background:var(--bg);color:var(--slate);}
+.fld select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px;color:var(--slate);cursor:pointer;}
+.fld .hint{font-size:11px;color:var(--muted);}
+
+.note{border-radius:9px;padding:11px 14px;font-size:12.5px;display:flex;gap:9px;line-height:1.5;}
+.note-navy{background:#eef3fb;border:1px solid #cfe0f7;color:var(--navy-ink);}
+.note-amber{background:var(--as);border:1px solid #f0d9a6;color:var(--amber);}
+.note-green{background:var(--gs);border:1px solid var(--gm);color:var(--green);}
+
+/* OTP inline */
+.otp-inline{display:flex;gap:8px;align-items:center;}
+.otp-inline input{width:46px;height:48px;text-align:center;font-size:18px;font-weight:800;border:1px solid var(--line);border-radius:9px;}
+.otp-inline input:focus{outline:none;border-color:var(--navy);}
+.otp-inline input.ok{border-color:var(--mint-d);background:var(--gs);}
+
+/* toggle group */
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+.seg button{padding:8px 14px;font-size:12.5px;font-weight:600;background:#fff;color:var(--slate);border:none;border-right:1px solid var(--line);}
+.seg button:last-child{border-right:none;}
+.seg button.on{background:var(--navy);color:#fff;}
+
+/* vet list */
+.vet{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--line2);}
+.vet:last-child{border-bottom:none;}
+.vet-box{width:18px;height:18px;border:1.5px solid var(--line);border-radius:5px;flex-shrink:0;margin-top:2px;}
+.vet-b{font-size:13.5px;font-weight:600;}
+.vet-d{font-size:12px;color:var(--muted);}
+.vet .up{margin-left:auto;font-size:12px;font-weight:700;color:var(--navy);border:1px solid var(--line);border-radius:8px;padding:6px 12px;background:#fff;white-space:nowrap;}
+
+/* summary rows */
+.srow{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line2);font-size:13.5px;gap:12px;}
+.srow:last-child{border-bottom:none;}
+.srow .l{color:var(--slate);}.srow .v{font-weight:700;text-align:right;}
+
+/* wf actions */
+.wf-actions{display:flex;justify-content:space-between;align-items:center;padding:18px 30px 22px;gap:10px;}
+.btn-back{padding:11px 22px;border-radius:22px;background:#9aa7b8;color:#fff;border:none;font-size:13.5px;font-weight:700;display:inline-flex;align-items:center;gap:7px;}
+.btn-back:hover{background:#8492a5;}
+.btn-next{padding:11px 26px;border-radius:22px;background:var(--teal);color:#fff;border:none;font-size:13.5px;font-weight:700;display:inline-flex;align-items:center;gap:7px;transition:.3s cubic-bezier(.16,1,.3,1);box-shadow:0 4px 15px rgba(0,176,155,.18);}
+.btn-next:hover{background:var(--teal-d);box-shadow:0 8px 20px rgba(0,176,155,.24);transform:translateY(-1px);}
+.btn-next.pub{background:var(--green);box-shadow:none;}
+.btn-next.pub:hover{background:#0b7a4d;transform:translateY(-1px);}
+
+/* Dashboard */
+.dash-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px;}
+@media(max-width:900px){.dash-grid{grid-template-columns:1fr;}}
+.dcard{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:var(--sh);overflow:hidden;transition:.4s cubic-bezier(.16,1,.3,1);}
+.dcard:hover{transform:translateY(-4px);box-shadow:var(--shm);}
+.dcard-top{padding:16px 18px 12px;display:flex;gap:12px;align-items:flex-start;}
+.dcard-ic{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+.dcard-t{font-size:15px;font-weight:750;}
+.dcard-s{font-size:12px;color:var(--muted);margin-top:2px;}
+.dprog{height:6px;background:var(--line2);margin:0 18px;border-radius:3px;overflow:hidden;}
+.dprog i{display:block;height:100%;border-radius:3px;}
+.dcard-b{padding:12px 18px 16px;}
+.dstat{display:flex;gap:18px;}
+.dstat .n{font-size:18px;font-weight:800;color:var(--navy);}
+.dstat .l{font-size:10.5px;color:var(--muted);}
+.dstep{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:5px 0;border-bottom:1px solid var(--line2);}
+.dstep:last-child{border-bottom:none;}
+.dstep .dot{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--line);font-size:8px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;}
+.dstep .dot.done{background:var(--mint-d);border-color:var(--mint-d);}
+.dcta{width:100%;margin-top:12px;padding:10px;border-radius:9px;background:var(--teal);color:#fff;border:none;font-size:13px;font-weight:700;transition:.3s cubic-bezier(.16,1,.3,1);}
+.dcta.out{background:#fff;color:var(--navy);border:1.5px solid var(--line);box-shadow:none;}
+.dcta:hover{background:var(--teal-d);box-shadow:0 6px 18px rgba(0,176,155,.24);}.dcta.out:hover{border-color:var(--teal);color:var(--teal);}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:12px;}
+.chip-green{background:var(--gs);color:var(--green);}
+.chip-gray{background:var(--bg);color:var(--slate);}
+.rl-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:11px;transition:.25s;}
+.rl-card:hover{border-color:var(--blue);box-shadow:var(--sh);}
+.rl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.rl-t{font-size:13px;font-weight:700;}.rl-m{font-size:11.5px;color:var(--muted);}
+.rl-s{margin-left:auto;font-size:10px;font-weight:700;padding:3px 9px;border-radius:8px;background:var(--gs);color:var(--green);}
+.co-result{display:flex;align-items:center;gap:11px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer;background:#fff;}
+.co-result:hover{border-color:var(--navy);background:#f6f9fd;}
+.co-result .rjoin{margin-left:auto;font-size:12px;font-weight:700;color:var(--navy);border:1px solid var(--line);border-radius:8px;padding:6px 12px;white-space:nowrap;}
+.co-result:hover .rjoin{border-color:var(--navy);background:#fff;}
+.co-sel{display:flex;align-items:center;gap:12px;padding:13px 15px;border:1.5px solid var(--gm);background:var(--gs);border-radius:11px;margin-top:6px;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:900px){.two-col{grid-template-columns:1fr;}}
+
+/* Directory */
+.dir-tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center;}
+.dir-tools input{flex:1;max-width:300px;padding:9px 13px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit;}
+.fchip{padding:7px 13px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;font-weight:600;color:var(--slate);background:#fff;}
+.fchip.on,.fchip:hover{border-color:var(--navy);color:var(--navy);background:#eef3fb;}
+.dir-tbl{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--sh);}
+.dir-tbl th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:12px 16px;background:#fbfcfe;border-bottom:1px solid var(--line);}
+.dir-tbl td{padding:13px 16px;border-bottom:1px solid var(--line2);font-size:13px;}
+.dir-tbl tr:last-child td{border-bottom:none;}
+.dir-tbl tr:hover td{background:#fafbfd;}
+.dav{width:30px;height:30px;border-radius:7px;color:#fff;font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;}
+.co-cell{display:flex;align-items:center;gap:10px;}
+.mini-btn{font-size:12px;font-weight:700;padding:6px 12px;border-radius:7px;border:1px solid var(--line);background:#fff;color:var(--navy);}
+.mini-btn.dis{color:var(--muted);cursor:not-allowed;}
+
+/* Matches */
+.mreq{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;margin-bottom:16px;box-shadow:var(--sh);}
+.mreq-h{padding:13px 16px;border-bottom:1px solid var(--line);background:#fbfcfe;display:flex;align-items:center;gap:9px;}
+.mreq-h .d{width:9px;height:9px;border-radius:50%;}
+.mreq-h b{font-size:13.5px;}.mreq-h span{font-size:11.5px;color:var(--muted);}
+.mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:14px;}
+@media(max-width:900px){.mgrid{grid-template-columns:1fr;}}
+.mcard{border:1px solid var(--line);border-radius:14px;padding:13px;transition:.3s cubic-bezier(.16,1,.3,1);}
+.mcard:hover{border-color:var(--blue);box-shadow:var(--shm);transform:translateY(-3px);}
+.mc-top{display:flex;align-items:center;gap:9px;margin-bottom:10px;}
+.mc-av{width:32px;height:32px;border-radius:8px;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+.mc-n{font-size:13px;font-weight:700;}.mc-t{font-size:11px;color:var(--muted);}
+.mc-score{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.mc-bw{flex:1;height:7px;background:var(--bg);border-radius:4px;overflow:hidden;}
+.mc-b{height:100%;border-radius:4px;}
+.mc-pct{font-size:14px;font-weight:800;}
+.mc-f{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);padding:2px 0;}
+.mc-f b{color:var(--ink);}
+.mc-act{margin-top:11px;display:flex;gap:7px;}
+.empty{text-align:center;padding:56px 30px;background:#fff;border:1.5px dashed var(--line);border-radius:12px;}
+.empty .ei{font-size:40px;}.empty h3{font-size:18px;margin:12px 0 8px;}.empty p{font-size:13px;color:var(--muted);max-width:380px;margin:0 auto 18px;}
+.ph{background:#fff;border:1.5px dashed var(--line);border-radius:12px;padding:50px;text-align:center;color:var(--muted);font-size:14px;}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+
+<!-- ── Demo bar ── -->
+<div class="demobar">
+  <b>Fingrid<i>Connect</i></b>
+  <span class="tag">Prototype · standard workflow format</span>
+  <span class="sp"></span>
+  <span class="lbl">Jump to</span>
+  <button class="jb" onclick="showHome()">Home</button>
+  <button class="jb" onclick="showLogin()">Login</button>
+  <button class="jb" onclick="startOnboarding()">Onboarding</button>
+  <button class="jb" onclick="demoAuth();railGo('dashboard')">Dashboard</button>
+  <button class="jb" onclick="demoAuth();openWF('company')">Company</button>
+  <button class="jb" onclick="demoAuth();openWF('req')">Requirement</button>
+  <button class="jb" onclick="demoAuth();railGo('requests')">Requests</button>
+  <button class="jb" onclick="demoAuth();railGo('partners')">Partners</button>
+  <button class="jb r" onclick="resetAll()">↺ Reset</button>
+</div>
+
+<!-- ══ HOME ══ -->
+<div id="scr-home" class="auth">
+  <div class="auth-orb" style="top:60px;left:8%;width:300px;height:300px;background:rgba(0,176,155,.35);"></div>
+  <div class="auth-orb" style="bottom:40px;right:8%;width:360px;height:360px;background:rgba(0,176,155,.18);"></div>
+  <div class="home-hero">
+    <div class="home-pill"><span class="d"></span> The Lending Partnership Marketplace</div>
+    <h1>Connect. Verify.<br><span>Partner with confidence.</span></h1>
+    <p>Onboard your organisation, publish partnership requirements, and get auto-matched with verified lenders, DSAs, BCs and agencies across the lending ecosystem.</p>
+    <div class="home-ctas">
+      <button class="home-primary" onclick="startOnboarding()">Get Started <span>→</span></button>
+      <button class="home-ghost" onclick="showLogin()">Login</button>
+    </div>
+    <div class="home-feats">
+      <div class="home-feat"><div class="fi">🧑‍💼</div><h4>Guided Onboarding</h4><p>Sign up by work email — entity &amp; verification detected.</p></div>
+      <div class="home-feat"><div class="fi">🏢</div><h4>Company Profiles</h4><p>Vetted pages with Fingrid-verified badges.</p></div>
+      <div class="home-feat"><div class="fi">📝</div><h4>Requirements</h4><p>Structured listings that drive quality matches.</p></div>
+      <div class="home-feat"><div class="fi">🎯</div><h4>Smart Matching</h4><p>Scored counterparties, ready to connect.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LOGIN (existing user) ══ -->
+<div id="scr-login" class="auth" hidden>
+  <div class="auth-card">
+    <div class="auth-logo"><span class="logo"><span class="logo-mark"></span><span class="logo-txt">Fingrid<i>Connect</i></span></span></div>
+    <div class="auth-h">Welcome back</div>
+    <div class="auth-sub">Log in to your Fingrid Connect account</div>
+    <div class="auth-field"><label>Work Email</label><input id="lg_email" type="email" placeholder="you@yourcompany.com" value="ramesh@sundaramsourcing.com"></div>
+    <div class="auth-field"><label>Password</label><input id="lg_pw" type="password" placeholder="••••••••" value="demo1234"></div>
+    <button class="auth-btn" onclick="doLogin()">Log In →</button>
+    <div class="auth-hint">🔑 Demo — any email &amp; password works</div>
+    <div class="auth-alt">New to Fingrid Connect? <a onclick="startOnboarding()">Create an account</a></div>
+  </div>
+</div>
+
+<!-- ══ WELCOME (after onboarding) ══ -->
+<div id="scr-welcome" class="auth" hidden>
+  <div class="auth-card" style="text-align:center;">
+    <div style="width:76px;height:76px;border-radius:50%;background:var(--gs);border:2px solid var(--gm);display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 18px;">🎉</div>
+    <div class="auth-h" id="wc_name">Welcome to Fingrid Connect!</div>
+    <div class="auth-sub" id="wc_sub">Your account is live.</div>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:22px;" id="wc_chips"></div>
+    <button class="auth-btn" onclick="railGo('dashboard')">Go to Dashboard →</button>
+  </div>
+</div>
+
+<!-- ══ APP SHELL ══ -->
+<div class="shell" id="shell" data-mode="user" hidden>
+  <!-- RESTRUCTURED 2026-07-22 (boss feedback round 2): dropped the "Select…" master-picker,
+       "search by.." bar, and "Business Date" — pure internal-ops-console chrome with no
+       meaning for a customer product. Topbar is now just: back, brand, spacer, notifications,
+       user chip. -->
+  <header class="topbar">
+    <button class="tb-back" onclick="topBack()">←</button>
+    <span class="logo" style="margin-right:4px;"><span class="logo-mark"></span><span class="logo-txt" style="font-size:15px;">Fingrid<i>Connect</i></span></span>
+    <span class="tb-sp"></span>
+    <div class="tb-ic" title="Notifications">🔔</div>
+    <div class="tb-user" id="tbUser">
+      <span id="tbSignup" class="tb-signup" hidden>Creating account…</span>
+      <span id="tbAdmin" style="display:flex;align-items:center;gap:9px;"><span class="tb-av">👤</span><span class="nm" id="tbName">Admin</span></span>
+    </div>
+  </header>
+
+  <div class="body">
+    <nav class="rail" id="rail"></nav>
+    <main class="main">
+      <div class="page-head"><div class="page-title" id="pageTitle">DASHBOARD</div><div class="crumb" id="crumb">Fingrid Connect</div></div>
+
+      <!-- DASHBOARD -->
+      <div class="view" id="view-dashboard">
+        <div class="dash-grid">
+          <div class="dcard">
+            <div class="dcard-top"><div class="dcard-ic" style="background:var(--gs);">👤</div><div><div class="dcard-t">User Profile</div><div class="dcard-s">Your personal card</div></div></div>
+            <div class="dprog"><i style="width:100%;background:var(--mint-d);"></i></div>
+            <div class="dcard-b"><div class="dstat"><div><div class="n" id="d_desg">—</div><div class="l">Designation</div></div><div><div class="n" id="d_terr">—</div><div class="l">Territory</div></div></div><div class="chip chip-green" style="margin-top:10px;">✓ Profile live</div></div>
+          </div>
+          <div class="dcard">
+            <div class="dcard-top"><div class="dcard-ic" style="background:#eef3fb;">🏢</div><div><div class="dcard-t">Company Profile</div><div class="dcard-s" id="d_compSub">Not started</div></div></div>
+            <div class="dprog"><i id="d_compProg" style="width:0%;background:var(--amber);"></i></div>
+            <div class="dcard-b"><div id="d_compSteps"></div><button class="dcta" id="d_compCta" onclick="openWF('company')" style="margin-top:12px;">Start Company Profile →</button></div>
+          </div>
+          <div class="dcard">
+            <div class="dcard-top"><div class="dcard-ic" style="background:#eef1f8;">📝</div><div><div class="dcard-t">Requirements</div><div class="dcard-s" id="d_reqSub">0 posted</div></div></div>
+            <div class="dprog"><i id="d_reqProg" style="width:0%;background:var(--navy);"></i></div>
+            <div class="dcard-b"><div id="d_reqList"><div style="font-size:12.5px;color:var(--muted);padding:6px 0;">No requirements yet.</div></div><button class="dcta out" onclick="openWF('req')" style="margin-top:10px;">+ Post a Requirement</button></div>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="dcard" style="cursor:pointer;" onclick="railGo('directory')"><div class="dcard-top"><div class="dcard-ic" style="background:var(--bg);">📇</div><div><div class="dcard-t">Partner Directory</div><div class="dcard-s">Browse organisations on the network</div></div></div><div class="dcard-b"><div style="font-size:12.5px;color:var(--muted);">6 organisations in your segment. Contact access depends on entity type &amp; AUM.</div></div></div>
+          <div class="dcard" style="cursor:pointer;" onclick="railGo('matches')"><div class="dcard-top"><div class="dcard-ic" style="background:var(--bg);">🎯</div><div><div class="dcard-t">My Matches</div><div class="dcard-s">Auto-matched candidates</div></div></div><div class="dcard-b"><div style="font-size:12.5px;color:var(--muted);" id="d_matchNote">Post a requirement to see matches.</div></div></div>
+          <div class="dcard" style="cursor:pointer;" onclick="railGo('requests')"><div class="dcard-top"><div class="dcard-ic" style="background:var(--bg);">📥</div><div><div class="dcard-t">Connect Requests</div><div class="dcard-s">Accept or reject incoming asks</div></div></div><div class="dcard-b"><div style="font-size:12.5px;color:var(--muted);">New requests from organisations wanting to partner with you.</div></div></div>
+          <div class="dcard" style="cursor:pointer;" onclick="railGo('partners')"><div class="dcard-top"><div class="dcard-ic" style="background:var(--bg);">🤝</div><div><div class="dcard-t">My Partners</div><div class="dcard-s">Established relationships</div></div></div><div class="dcard-b"><div style="font-size:12.5px;color:var(--muted);">Organisations you've connected with, ready to work together.</div></div></div>
+        </div>
+      </div>
+
+      <!-- DIRECTORY -->
+      <div class="view" id="view-directory" hidden>
+        <div class="dir-tools">
+          <input placeholder="Search organisations…" oninput="renderDir(this.value)">
+          <span class="fchip on" onclick="dirFilt('all',this)">All</span>
+          <span class="fchip" onclick="dirFilt('nbfc',this)">NBFC</span>
+          <span class="fchip" onclick="dirFilt('dsa',this)">DSA/LSP</span>
+          <span class="fchip" onclick="dirFilt('bc',this)">BC</span>
+          <span class="fchip" onclick="dirFilt('colender',this)">Co-Lender</span>
+        </div>
+        <table class="dir-tbl"><thead><tr><th>Organisation</th><th>Type</th><th>State</th><th>AUM</th><th>Verification</th><th></th></tr></thead><tbody id="dirBody"></tbody></table>
+      </div>
+
+      <!-- MATCHES -->
+      <!-- render: CUSTOM — computed match scoring (BR-08/BR-10); cron-materialised in the
+           real system (BR-08), never computed inline. EC-05: the cron hard-replaces every
+           match row on each run, so "Requested" state below only survives client-side in
+           this demo — it would be wiped by regeneration in the real implementation until
+           EC-05 is fixed. -->
+      <div class="view" id="view-matches" hidden><div id="matchesWrap"></div></div>
+
+      <!-- CONNECT REQUESTS (US-08) — new screen; no prior source in any earlier prototype.
+           Backs BR-12 (send/duplicate-guard) and BR-13 (accept/reject, PENDING-only). -->
+      <!-- render: CUSTOM — state-machine gated actions, not a plain CRUD list -->
+      <div class="view" id="view-requests" hidden><div id="requestsWrap"></div></div>
+
+      <!-- MY PARTNERS (US-09) — new screen; no prior source in any earlier prototype.
+           Reflects core_channel_relationship rows created when a response is ACCEPTED (BR-13). -->
+      <!-- render: likely FORM_BUILDER — read-only list, no workflow logic of its own -->
+      <div class="view" id="view-partners" hidden><div id="partnersWrap"></div></div>
+
+      <!-- WORKFLOW -->
+      <div class="view" id="view-workflow" hidden>
+        <!-- Own heading — .page-head is hidden in workflow mode (see is-workflow CSS), so the
+             wizard needs its own title now that the enterprise topbar/breadcrumb are gone. -->
+        <div style="text-align:center;margin-bottom:6px;"><div id="wfPageTitle" style="font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-.01em;"></div></div>
+        <div class="wf-card">
+          <div class="stage-tabs" id="stageTabs"></div>
+          <div class="wf-body" id="wfBody"></div>
+          <div class="wf-actions"><button class="btn-back" id="wfBack" onclick="wfPrev()">← Back</button><button class="btn-next" id="wfNext" onclick="wfNext()">Save &amp; Next →</button></div>
+        </div>
+      </div>
+
+      <div class="view" id="view-blank" hidden><div class="ph">This module is part of the full build — not included in this prototype.</div></div>
+    </main>
+  </div>
+
+  <footer class="app-foot"><span>2026 © Fingrid Connect</span><span>Designed &amp; built on the Fingrid.ai platform</span></footer>
+</div>
+
+<script>
+// ── Rail ──
+const ICONS={
+  dashboard:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
+  directory:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
+  req:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+  matches:'<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+  company:'<path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/>',
+  profile:'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  requests:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  partners:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+};
+const RAIL=[['dashboard','Dashboard'],['directory','Directory'],['req','Requirements'],['matches','Matches'],['requests','Requests'],['partners','Partners'],['company','Company'],['profile','Profile'],['settings','Settings']];
+function renderRail(active){
+  document.getElementById('rail').innerHTML=RAIL.map(r=>'<div class="rail-item'+(r[0]===active?' on':'')+'" onclick="railGo(\''+r[0]+'\')"><svg viewBox="0 0 24 24">'+ICONS[r[0]]+'</svg><span>'+r[1]+'</span></div>').join('');
+}
+
+// ── Data ──
+const DIR=[
+{id:'FL',name:'FlexiLoans Technologies Pvt Ltd',type:'NBFC',cat:'nbfc',color:'#2b4a7e',state:'Maharashtra',aum:2400,staff:320,tier:3,vetted:true,reqs:['Seeking DSA/LSP Network']},
+{id:'SS',name:'Sundaram Sourcing Partners LLP',type:'DSA Firm',cat:'dsa',color:'#0f8f5b',state:'Tamil Nadu',aum:0,staff:28,tier:1,vetted:false,reqs:['Seeking Lender tie-ups']},
+{id:'VB',name:'Velocity BC Services Pvt Ltd',type:'BC',cat:'bc',color:'#6d28d9',state:'Maharashtra',aum:0,staff:580,tier:2,vetted:true,reqs:['Seeking Lender partnerships']},
+{id:'GF',name:'Gove Finance Ltd',type:'NBFC Co-Lender',cat:'colender',color:'#1cc075',state:'Tamil Nadu',aum:1850,staff:210,tier:3,vetted:true,reqs:['Seeking Co-Lending partners']},
+{id:'ML',name:'Madurai Loan Connect LLP',type:'LSP',cat:'dsa',color:'#2563eb',state:'Tamil Nadu',aum:0,staff:45,tier:1,vetted:false,reqs:['Seeking Lender tie-ups']},
+{id:'TC',name:'Trust Connect BC',type:'BC',cat:'bc',color:'#b8770a',state:'Rajasthan',aum:0,staff:310,tier:2,vetted:true,reqs:['Seeking Lender partnerships']},
+];
+let st={name:'Ramesh Kumar',desg:'Business Head',terr:'Coimbatore',entity:'DSA — Firm / LLP',aum:0,companyPct:0,requirements:[],sentRequests:[],partners:[]};
+// BR-12/BR-13 demo seed — incoming PENDING connect requests from other demo organisations.
+// Modeled on core_partnership_response (response_status: PENDING|ACCEPTED|REJECTED).
+let incomingRequests=[
+  {id:'REQ-1',from:'FL',status:'PENDING',msg:'Interested in a DSA tie-up for two-wheeler sourcing in TN.'},
+  {id:'REQ-2',from:'GF',status:'PENDING',msg:'Exploring co-lending partnership for MSME book.'},
+];
+
+// ── Workflow configs (STAGES) ──
+// L3 provisional render annotations (per 02-feature-spec.md §Workflow Definitions):
+//   onboard  stages 0,2,3: likely FORM_BUILDER (plain field capture).
+//            stage 1 (company link): CUSTOM — autocomplete search + BR-14 domain-scenario
+//            branching (personal / on-platform / new-domain) is conditional logic, not a form.
+//   company  stages 0,1,2,3,5: likely FORM_BUILDER.
+//            stage 4 (Digital Capabilities): likely FORM_BUILDER, BUT see the GAP comment
+//            inside compStage() below — BR-16's LSP-only conditional skip is NOT implemented
+//            in this prototype; every entity type currently sees this stage.
+//   req      stages 0,1,3,4: likely FORM_BUILDER.
+//            stage 2 "What You Offer": OPEN QUESTION — see the note-amber banner inside
+//            reqStage() below; this stage's fields conflict with 05-api-contracts' decision
+//            to exclude commission/FLDG/terms from V1 (contract.md, WF3 scope note).
+const WF={
+  onboard:{title:'CREATE YOUR ACCOUNT',crumb:'Sign Up',pub:'Create Account',stages:['Identity','Company','Your Details','Preferences'],render:onbStage},
+  company:{title:'COMPANY PROFILE',crumb:'Company Profile',pub:'Publish &amp; Go Live',stages:['Legal Identity','Operations','Staff','Empanelments','Digital','Verify'],render:compStage},
+  req:{title:'POST A REQUIREMENT',crumb:'New Requirement',pub:'Publish Requirement',stages:['Type & Context','What You Need','Criteria','Review'],render:reqStage}, // RESOLVED 2026-07-22: 'What You Offer' (R3) removed — owner confirmed not required, not just deferred
+};
+let cur={wf:null,i:0};
+
+function renderTabs(){
+  const c=WF[cur.wf];
+  document.getElementById('stageTabs').innerHTML=c.stages.map((s,i)=>{
+    const cls=i===cur.i?' active':i<cur.i?' done':'';
+    const dot=i<cur.i?'✓':(i+1);
+    return '<div class="stage-tab'+cls+'" onclick="goStage('+i+')"><div class="st-dot">'+dot+'</div><div class="st-label">'+s+'</div><div class="st-line"></div></div>';
+  }).join('');
+  document.getElementById('pageTitle').innerHTML=c.title;
+  document.getElementById('crumb').innerHTML='Fingrid Connect &nbsp;›&nbsp; <b>'+c.crumb+'</b>';
+  document.getElementById('wfPageTitle').innerHTML=c.title; // workflow's own heading (page-head is hidden in is-workflow mode)
+  document.getElementById('wfBody').innerHTML=c.render(cur.i);
+  const last=cur.i===c.stages.length-1;
+  const nb=document.getElementById('wfNext');
+  nb.innerHTML=last?c.pub:'Save &amp; Next →';
+  nb.className='btn-next'+(last?' pub':'');
+  document.getElementById('wfBack').style.visibility=cur.i===0?'hidden':'visible';
+  document.querySelector('.main').scrollTo?.(0,0);window.scrollTo(0,0);
+}
+// RESOLVED 2026-07-22 (BR-16, owner-confirmed): Digital Capabilities is stage index 4 in the
+// 'company' workflow (Legal=0, Operations=1, Staff=2, Empanelments=3, Digital=4, Verify=5) and
+// is LSP-only. isLspEntity() + the guards in goStage/wfPrev/wfNext below skip index 4 for any
+// other entity type — Empanelments (3) is never skipped, matching the corrected BR-16 wording.
+function isLspEntity(){return st.entity==='LSP / Aggregator';}
+function goStage(i){
+  if(cur.wf==='company'&&i===4&&!isLspEntity()){i=(cur.i<4)?5:3;} // skip Digital for non-LSP, land on whichever neighbour makes sense for the click direction
+  cur.i=i;renderTabs();
+}
+function wfPrev(){
+  if(cur.i<=0)return;
+  let i=cur.i-1;
+  if(cur.wf==='company'&&i===4&&!isLspEntity())i=3; // skip Digital going backward too
+  cur.i=i;renderTabs();
+}
+function wfNext(){
+  const c=WF[cur.wf];
+  if(cur.i<c.stages.length-1){
+    let i=cur.i+1;
+    if(cur.wf==='company'&&i===4&&!isLspEntity())i=5; // BR-16: non-LSP skips straight to Verify
+    cur.i=i;renderTabs();return;
+  }
+  // finish
+  if(cur.wf==='onboard'){finishOnboard();}
+  else if(cur.wf==='company'){st.companyPct=100;railGo('dashboard');}
+  else if(cur.wf==='req'){addRequirement();railGo('matches');}
+}
+function openWF(wf){
+  cur={wf:wf,i:0};
+  document.getElementById('shell').classList.add('is-workflow'); // RESTRUCTURED 2026-07-22: hides rail, centers content — see CSS note
+  showView('workflow');renderRail(wf==='req'?'req':wf==='company'?'company':'dashboard');
+  renderTabs();
+}
+
+// ── Stage renderers ──
+function fld(label,req,inner){return '<div class="fld"><label>'+label+(req?'<span class="req">*</span>':'')+'</label>'+inner+'</div>';}
+function sel(opts){return '<select><option value="">Select an option</option>'+opts.map(o=>'<option>'+o+'</option>').join('')+'</select>';}
+function inp(ph,val){return '<input placeholder="'+(ph||'')+'"'+(val?' value="'+val+'"':'')+'>';}
+
+function onbStage(i){
+  if(i===0)return step(1,'Email &amp; Entity Verification')+
+    '<div class="grid">'+
+    fld('Work Email',1,inp('you@yourcompany.com'))+
+    fld('Entity Type',1,sel(['DSA — Individual','DSA — Firm / LLP','LSP / Aggregator','Business Correspondent','NBFC','Bank','HFC','Co-Lending NBFC','Verification Agency','Collection Agency','Legal Agency','Property Agency']))+
+    fld('Mobile',1,inp('9XXXXXXXXX'))+
+    fld('Email OTP',1,'<div class="otp-inline">'+Array(6).fill('<input maxlength="1" inputmode="numeric" oninput="otpStep(this)">').join('')+'</div>')+
+    '</div><div style="margin-top:14px;"><div class="note note-navy">🔒 A verification code was sent to your email. <b>Demo code: 1 2 3 4 5 6</b>. Your email domain becomes your organisation identifier on Fingrid Connect.</div></div>';
+  if(i===1)return step(1,'Company Link')+
+    '<div style="margin-bottom:18px;"><span class="seg">'+
+      '<button id="segNew" class="on" onclick="onbCoMode(\'new\')">Create new company page</button>'+
+      '<button id="segJoin" onclick="onbCoMode(\'join\')">Join existing company</button>'+
+    '</span></div>'+
+    '<div id="coNew">'+
+      '<div class="grid">'+
+      fld('Registered Legal Name',1,inp('e.g. Sundaram Sourcing Partners LLP'))+
+      fld('PAN',1,inp('ABCDE1234F'))+
+      fld('CIN (if applicable)',0,inp('U65990TN2014PTC…'))+
+      fld('Year of Incorporation',0,inp('2019'))+
+      fld('Registered State',1,sel(['Tamil Nadu','Karnataka','Andhra Pradesh','Maharashtra','Kerala','Delhi']))+
+      fld('Website',0,inp('https://'))+
+      '</div><div style="margin-top:14px;"><div class="note note-navy">🏢 A minimal company stub is created now. Complete the full company profile later from your dashboard.</div></div>'+
+    '</div>'+
+    '<div id="coJoin" hidden>'+
+      '<div class="note note-navy" style="margin-bottom:14px;">🔎 Search for your organisation. If it is already on Fingrid Connect, request to join instead of creating a duplicate page.</div>'+
+      '<div class="fld col4" style="max-width:540px;"><label>Search your company</label><input id="coSearch" placeholder="Type company name… (try Velocity, Gove, Trust, Madurai)" oninput="onbCoSearch(this.value)" autocomplete="off"></div>'+
+      '<div id="coResults" style="margin-top:12px;max-width:660px;"></div>'+
+      '<div id="coSelected" style="max-width:660px;"></div>'+
+    '</div>';
+  if(i===2)return step(1,'Personal Profile')+
+    '<div class="grid">'+
+    fld('First Name',1,inp('Ramesh'))+
+    fld('Last Name',1,inp('Kumar'))+
+    fld('Work Email',0,'<input readonly value="ramesh@sundaramsourcing.com">')+
+    fld('Mobile',1,'<input readonly value="+91 98XXXXXXXX">')+
+    fld('Designation',1,sel(['Director','Partner','Business Head','Sales Manager','Relationship Manager','Other']))+
+    fld('Department',0,sel(['Business Dev','Sales','Operations','Finance']))+
+    fld('Territory / Districts',1,inp('e.g. Coimbatore, Tiruppur, Erode'))+
+    fld('LinkedIn (optional)',0,inp('https://linkedin.com/in/…'))+
+    '</div>';
+  return step(1,'Contact &amp; Privacy Preferences')+
+    '<div class="note note-navy" style="margin-bottom:16px;">Only Lenders with AUM ≥ ₹100 Cr can view contact details by default. Others see Public fields only.</div>'+
+    '<div class="grid g2">'+
+    fld('Mobile visibility',0,sel(['On Request','Public','Private']))+
+    fld('Email visibility',0,sel(['On Request','Public','Private']))+
+    fld('LinkedIn visibility',0,sel(['Public','On Request','Private']))+
+    fld('Territory visibility',0,sel(['Public','On Request','Private']))+
+    fld('What are you looking for?',0,sel(['Lender tie-ups','DSA / LSP network','BC partners','Co-lending partners','Verification agencies']))+
+    fld('Email notifications',0,sel(['Enabled','Disabled']))+
+    '</div>';
+}
+
+function compStage(i){
+  if(i===0)return step(1,'Legal Identity')+
+    '<div class="grid">'+
+    fld('Entity Type',0,'<input readonly value="'+st.entity+'">')+
+    fld('Registered Legal Name',1,inp('e.g. Sundaram Sourcing Partners LLP'))+
+    fld('PAN',1,inp('ABCDE1234F'))+
+    fld('CIN (if applicable)',0,inp('U65990…'))+
+    fld('Year of Incorporation',0,inp('2019'))+
+    fld('Registered State',1,sel(['Tamil Nadu','Karnataka','Maharashtra','Kerala','Delhi']))+
+    fld('GST Number',0,inp('33ABCDE1234F1Z5'))+
+    fld('Website',0,inp('https://'))+
+    '</div>';
+  if(i===1)return step(1,'Operations & Volume')+
+    '<div class="sub-lbl">Financial scale</div><div class="grid">'+
+    fld('Overall AUM / Loan Book',1,inp('e.g. ₹120 Cr'))+
+    fld('Monthly Disbursal',0,inp('e.g. ₹8 Cr / mo'))+
+    fld('Branches / Kiosks',0,inp('0'))+
+    fld('Branch Locations',0,inp('Coimbatore, Tiruppur…'))+
+    '</div><div class="sub-lbl">Products &amp; geography</div><div class="grid g2">'+
+    fld('Products offered',1,sel(['Two-Wheeler','Personal Loans','MSME','Home Loans','Gold Loans','LAP']))+
+    fld('Operating states',1,inp('Tamil Nadu, Karnataka…'))+
+    '</div>';
+  if(i===2)return step(1,'Staff & Capacity')+
+    '<div class="grid">'+
+    fld('Total Staff',1,inp('48'))+
+    fld('Field Staff Count',0,inp('32'))+
+    fld('Branch Managers',0,inp('6'))+
+    fld('Tele-calling Team',0,inp('8'))+
+    '</div><div class="sub-lbl">Primary role category</div><div class="grid g3">'+
+    fld('Role',0,inp('e.g. Field Sales'))+fld('Count',0,inp('18'))+fld('Locations',0,inp('Coimbatore, Tiruppur'))+
+    '</div><div class="note note-amber" style="margin-top:8px;">Self-declared — vettable against EPFO challans in the Verify stage.</div>';
+  if(i===3)return step(1,'Empanelments & Credentials')+
+    /* BR-03: publish is blocked (409) unless the credential mandatory for this channel's
+       entity_type is present — bc→RBI BC Empanelment, collection_agency→RDAI,
+       property_agency→IBBI, legal_agency→Bar Council. GAP: the dropdown below is generic
+       and does not mark any option as required based on st.entity — the server enforces
+       BR-03 at publish time (stage 5) regardless of what the UI hints here. */
+    '<div class="sub-lbl">Lender empanelment</div><div class="grid">'+
+    fld('Lender / Institution',0,inp('e.g. FlexiLoans'))+fld('Product',0,inp('Two-Wheeler'))+fld('Active Since',0,inp('2021'))+fld('Reference #',0,inp('Optional'))+
+    '</div><div class="sub-lbl">Regulatory credentials</div><div class="grid g2">'+
+    fld('Registration Type',0,sel(['RBI BC Empanelment','RDAI Registration','IBBI Valuer','Bar Council','ISO 27001','None']))+
+    fld('Registration / Certificate No.',0,inp('Upload or enter number…'))+
+    '</div>';
+  // RESOLVED 2026-07-22 (BR-16): non-LSP entity types now skip this stage entirely via the
+  // guards in goStage/wfPrev/wfNext — this render path is only reachable for LSP channels now.
+  if(i===4)return step(1,'Digital & Integration Capabilities')+
+    '<div class="grid g2">'+
+    fld('Mobile app?',0,sel(['No','Yes']))+fld('Partner portal URL',0,inp('https://'))+
+    fld('Bureau integrations',0,inp('CIBIL, CRIF…'))+fld('ISO 27001 certified?',0,sel(['No','Yes']))+
+    fld('VAPT audit firm',0,inp('e.g. BDO India'))+fld('API integration ready?',0,sel(['No','Yes']))+
+    '</div><div class="note note-navy" style="margin-top:8px;">Used by lenders to assess integration readiness — most relevant for LSPs / aggregators.</div>';
+  /* BR-03: publish blocked (409) if the entity-type-mandatory credential above is missing.
+     BR-02: branch_count on the published page is always derived (COUNT of onb_location),
+     never a field entered here. */
+  return step(1,'Verify & Publish')+
+    '<div class="note note-green" style="margin-bottom:14px;">Each claim can be vetted independently. Upload proof to earn Fingrid Vetted ✓ badges — reviewed within 2 business days.</div>'+
+    [['AUM / Loan Book','CA-certified statement / Audited balance sheet'],['Monthly Disbursal','MIS statement or lender sanction letter'],['Branch Count','GST registration (multi-location)'],['Staff Count','EPFO ECR challan'],['Empanelments','Appointment letter from each lender']]
+    .map(v=>'<div class="vet"><div class="vet-box"></div><div><div class="vet-b">'+v[0]+'</div><div class="vet-d">Accepted proof: '+v[1]+'</div></div><button class="up">Upload Proof</button></div>').join('');
+}
+
+function reqStage(i){
+  /* BR-05: partnership_type is required — server returns 422 without it. */
+  if(i===0)return step(1,'Type & Context')+
+    '<div class="grid g2">'+
+    fld('Partnership Type',1,sel(['Seeking Lender tie-ups','Seeking Lender Empanelment','Seeking DSA/LSP network','Seeking BC partners','Seeking Co-Lending partners']))+
+    fld('Product Focus',1,sel(['Two-Wheeler','Personal Loans','MSME','Home Loans','Gold Loans','All products']))+
+    '</div><div class="grid" style="margin-top:18px;">'+
+    fld('Context / background','',
+      '<textarea class="" placeholder="e.g. Coimbatore-based DSA firm with 6 years of two-wheeler sourcing, seeking additional lender tie-ups for TN coverage…"></textarea>').replace('class="fld"','class="fld col4"')+
+    '</div>';
+  if(i===1)return step(1,'What You Need')+
+    '<div class="sub-lbl">Geography</div><div class="grid g2">'+
+    fld('Primary state',1,sel(['Tamil Nadu','Karnataka','Andhra Pradesh','Kerala','Maharashtra','Pan-India']))+
+    fld('Specific districts / pincodes',0,inp('e.g. Coimbatore, Tiruppur, Erode'))+
+    '</div><div class="sub-lbl">Volume & ticket</div><div class="grid">'+
+    fld('Target volume / month',1,inp('e.g. ₹5 Cr or 200 cases'))+
+    fld('Ticket size range',1,inp('e.g. ₹50K – ₹2L'))+
+    fld('Cases / month',0,inp('80'))+
+    fld('Processing TAT expected',0,inp('48 hours'))+
+    '</div>';
+  // RESOLVED 2026-07-22: 'What You Offer' (R3 — commission/FLDG/terms) stage REMOVED here.
+  // Owner confirmed it is not required, consistent with the API contract's V1 exclusion
+  // (01-product-spec.md Out of Scope). Previously stage index 2; Counterparty Criteria below
+  // is now index 2 (was 3).
+  if(i===2)return step(1,'Counterparty Criteria')+
+    '<div class="grid">'+
+    fld('Minimum verification tier',0,sel(['Any tier','Tier 1 — KYC','Tier 2 — Operational','Tier 3 — Full compliance']))+
+    fld('Min AUM (₹ Cr)',0,inp('e.g. 50'))+
+    fld('Min monthly sourcing',0,inp('e.g. ₹1 Cr'))+
+    fld('Min branches',0,inp('0'))+
+    fld('Min field staff',0,inp('0'))+
+    fld('Certifications required',0,inp('e.g. ISO 27001, RBI BC'))+
+    '</div>';
+  /* BR-06: publishing an already-LIVE requirement returns 409 (no re-publish exists).
+     BR-07: publish enqueues async match generation — never computed inline on this click. */
+  return step(1,'Review & Publish')+
+    '<div class="sub-lbl">Requirement summary</div>'+
+    [['Type','Seeking Lender tie-ups'],['Product','Two-Wheeler'],['Geography','Tamil Nadu'],['Volume sought','₹5 Cr / month'],['Ticket size','₹50K – ₹2L'],['Min. tier','Tier 1 — KYC']] // 'Commission' row removed 2026-07-22 with R3
+    .map(r=>'<div class="srow"><span class="l">'+r[0]+'</span><span class="v">'+r[1]+'</span></div>').join('')+
+    '<div class="sub-lbl">Listing settings</div><div class="grid g2">'+
+    fld('Visibility',0,sel(['Public — visible to matched entities','Invite-only','Private — draft']))+
+    fld('Requirement owner',0,'<input readonly value="ramesh@sundaramsourcing.com">')+
+    '</div><div class="note note-navy" style="margin-top:12px;">🎯 On publish, auto-match ranks candidates by geography, product fit, ticket size and verification tier.</div>';
+}
+function step(n,name){return '<div class="step-head"><div class="step-num">'+n+'</div><div class="step-name">'+name+'</div></div>';}
+
+// ── Onboarding: Company Link (create new / join existing) ──
+function onbCoMode(mode){
+  var isNew=mode==='new';
+  var sn=document.getElementById('segNew'),sj=document.getElementById('segJoin');
+  var cn=document.getElementById('coNew'),cj=document.getElementById('coJoin');
+  if(sn)sn.classList.toggle('on',isNew);
+  if(sj)sj.classList.toggle('on',!isNew);
+  if(cn)cn.hidden=!isNew;
+  if(cj)cj.hidden=isNew;
+}
+function onbCoSearch(q){
+  var box=document.getElementById('coResults'),selEl=document.getElementById('coSelected');
+  if(selEl)selEl.innerHTML='';
+  if(!box)return;
+  if(!q||q.length<2){box.innerHTML='';return;}
+  var low=q.toLowerCase();
+  var res=DIR.filter(function(c){return c.name.toLowerCase().indexOf(low)>=0||c.type.toLowerCase().indexOf(low)>=0;}).slice(0,5);
+  box.innerHTML=res.length?res.map(function(c){
+    return '<div class="co-result" onclick="onbCoPick(\''+c.id+'\')"><span class="dav" style="background:'+c.color+'">'+c.id+'</span><div><div class="rl-t">'+c.name+'</div><div class="rl-m">'+c.type+' · '+c.state+(c.vetted?' · ✓ Verified Tier '+c.tier:' · Self-declared')+'</div></div><span class="rjoin">Request to join →</span></div>';
+  }).join(''):'<div class="ph" style="padding:22px;">No company found for “'+q+'”. Switch to <b>Create new company page</b>.</div>';
+}
+function onbCoPick(id){
+  var c=DIR.filter(function(x){return x.id===id;})[0];if(!c)return;
+  var box=document.getElementById('coResults'),s=document.getElementById('coSearch'),selEl=document.getElementById('coSelected');
+  if(box)box.innerHTML='';
+  if(s)s.value=c.name;
+  if(selEl)selEl.innerHTML='<div class="co-sel"><span class="dav" style="background:'+c.color+'">'+c.id+'</span><div style="flex:1;"><div class="rl-t">'+c.name+'</div><div class="rl-m">'+c.type+' · '+c.state+' · '+(c.vetted?'✓ Verified Tier '+c.tier:'Self-declared')+'</div></div><span class="chip chip-green">✓ Selected</span></div>'+
+    // RESOLVED 2026-07-22: owner confirmed no approval step exists or is wanted — join is
+    // instant. Copy corrected below (previously wrongly promised "a Page Admin approves your
+    // access").
+    '<div class="note note-green" style="margin-top:10px;">🤝 You\'ll be <b>added to</b> this company page right away. You only fill your personal details next.</div>';
+}
+
+// ── OTP helper ──
+function otpStep(el){el.value=el.value.replace(/[^0-9]/g,'').slice(-1);if(el.value){el.classList.add('ok');const n=el.nextElementSibling;if(n&&n.tagName==='INPUT')n.focus();}else el.classList.remove('ok');}
+
+// ── Auth / navigation ──
+function hideAll(){['scr-home','scr-login','scr-welcome'].forEach(id=>document.getElementById(id).hidden=true);document.getElementById('shell').hidden=true;}
+function showHome(){hideAll();document.getElementById('scr-home').hidden=false;window.scrollTo(0,0);}
+function showLogin(){hideAll();document.getElementById('scr-login').hidden=false;window.scrollTo(0,0);}
+function doLogin(){enterApp('user');railGo('dashboard');}
+function demoAuth(){enterApp('user');}
+function enterApp(mode){
+  hideAll();
+  const shell=document.getElementById('shell');shell.hidden=false;shell.dataset.mode=mode;
+  document.getElementById('tbSignup').hidden=mode!=='signup';
+  document.getElementById('tbAdmin').style.display=mode==='signup'?'none':'flex';
+  window.scrollTo(0,0);
+}
+function startOnboarding(){enterApp('signup');openWF('onboard');}
+function finishOnboard(){
+  hideAll();
+  document.getElementById('scr-welcome').hidden=false;
+  document.getElementById('wc_name').textContent='Welcome, '+st.name.split(' ')[0]+'!';
+  document.getElementById('wc_sub').innerHTML='Your Fingrid Connect account is live · '+st.entity;
+  document.getElementById('wc_chips').innerHTML=['✓ Account live','📋 Company profile pending','🔒 Contact access — after verification'].map((c,i)=>'<span class="chip '+(i===0?'chip-green':'chip-gray')+'">'+c+'</span>').join('');
+  window.scrollTo(0,0);
+}
+function topBack(){railGo('dashboard');}
+
+function showView(v){['dashboard','directory','matches','requests','partners','workflow','blank'].forEach(x=>document.getElementById('view-'+x).hidden=(x!==v));}
+function railGo(key){
+  enterApp(document.getElementById('shell').dataset.mode==='signup'?'user':document.getElementById('shell').dataset.mode);
+  if(key==='company'){openWF('company');return;}
+  if(key==='req'){openWF('req');return;}
+  document.getElementById('shell').classList.remove('is-workflow'); // back to app-home views — rail returns
+  renderRail(key);
+  if(key==='dashboard'){showView('dashboard');setHead('DASHBOARD','');renderDash();}
+  else if(key==='directory'){showView('directory');setHead('PARTNER DIRECTORY','Directory');renderDir('');}
+  else if(key==='matches'){showView('matches');setHead('MY MATCHES','Matches');renderMatches();}
+  else if(key==='requests'){showView('requests');setHead('CONNECT REQUESTS','Requests');renderRequests();}
+  else if(key==='partners'){showView('partners');setHead('MY PARTNERS','Partners');renderPartners();}
+  else{showView('blank');setHead(key.toUpperCase(),key.charAt(0).toUpperCase()+key.slice(1));}
+  window.scrollTo(0,0);
+}
+function setHead(t,crumb){document.getElementById('pageTitle').textContent=t;document.getElementById('crumb').innerHTML='Fingrid Connect'+(crumb?' &nbsp;›&nbsp; <b>'+crumb+'</b>':'');}
+
+// ── Dashboard ──
+function renderDash(){
+  document.getElementById('d_desg').textContent=st.desg;
+  document.getElementById('d_terr').textContent=st.terr;
+  const steps=[['Legal Identity',st.companyPct>0],['Operations',st.companyPct>=100],['Staff',st.companyPct>=100],['Empanelments',st.companyPct>=100],['Published',st.companyPct>=100]];
+  const done=steps.filter(s=>s[1]).length,pct=Math.round(done/steps.length*100);
+  document.getElementById('d_compProg').style.width=pct+'%';
+  document.getElementById('d_compProg').style.background=pct===100?'var(--mint-d)':'var(--amber)';
+  document.getElementById('d_compSub').textContent=pct+'% complete';
+  document.getElementById('d_compSteps').innerHTML=steps.map(s=>'<div class="dstep"><span class="dot'+(s[1]?' done':'')+'">'+(s[1]?'✓':'')+'</span>'+s[0]+'</div>').join('');
+  document.getElementById('d_compCta').textContent=pct===0?'Start Company Profile →':pct===100?'View Company Page →':'Continue →';
+  const r=st.requirements;
+  document.getElementById('d_reqSub').textContent=r.length+' posted';
+  document.getElementById('d_reqProg').style.width=(r.length?Math.min(r.length*34,100):0)+'%';
+  document.getElementById('d_reqList').innerHTML=r.length?r.map(x=>'<div class="rl-card"><span class="rl-dot" style="background:'+x.dot+'"></span><div><div class="rl-t">'+x.type+'</div><div class="rl-m">'+x.product+' · '+x.geo+'</div></div><span class="rl-s">Live</span></div>').join(''):'<div style="font-size:12.5px;color:var(--muted);padding:6px 0;">No requirements yet.</div>';
+  document.getElementById('d_matchNote').textContent=r.length?r.length+' requirement(s) active — view matches.':'Post a requirement to see matches.';
+}
+
+// ── Directory ──
+let dfilt='all';
+function dirFilt(f,el){dfilt=f;document.querySelectorAll('#view-directory .fchip').forEach(c=>c.classList.remove('on'));el.classList.add('on');renderDir(document.querySelector('#view-directory input').value);}
+function renderDir(q){
+  q=(q||'').toLowerCase();
+  // BR-11: contact (mobile/email) only shown when caller is lender-type (OWNBOOK/COLENDER)
+  // AND aum >= ₹100 Cr. Demo user (st.entity = DSA — Firm / LLP) always fails this gate,
+  // so Connect stays locked here — matches BR-12's "403 if caller fails the contact gate"
+  // for a request initiated straight from Directory (as opposed to from a Match card, which
+  // uses sendConnectRequest() and is not gated the same way in this demo — flag if that
+  // asymmetry needs resolving at L5).
+  document.getElementById('dirBody').innerHTML=DIR.filter(c=>(dfilt==='all'||c.cat===dfilt)&&(!q||c.name.toLowerCase().includes(q)||c.type.toLowerCase().includes(q))).map(c=>{
+    const aum=c.aum>0?'₹'+c.aum+' Cr':'—';
+    return '<tr><td><div class="co-cell"><span class="dav" style="background:'+c.color+'">'+c.id+'</span><b>'+c.name+'</b></div></td><td>'+c.type+'</td><td>'+c.state+'</td><td>'+aum+'</td><td>'+(c.vetted?'<span class="chip chip-green">✓ Vetted · Tier '+c.tier+'</span>':'<span class="chip chip-gray">Self-declared</span>')+'</td><td><button class="mini-btn dis" title="Contact gated by entity & AUM">🔒 Connect</button></td></tr>';
+  }).join('');
+}
+
+// ── Requirements + Matches ──
+function addRequirement(){st.requirements.push({type:'Seeking Lender tie-ups',product:'Two-Wheeler',geo:'Tamil Nadu',dot:'#2b4a7e'});}
+function renderMatches(){
+  const wrap=document.getElementById('matchesWrap');
+  if(!st.requirements.length){wrap.innerHTML='<div class="empty"><div class="ei">🎯</div><h3>No matches yet</h3><p>Publish a requirement and Fingrid auto-matches counterparties, scored on geography, product fit, ticket size and verification tier.</p><button class="dcta" style="max-width:220px;margin:0 auto;" onclick="openWF(\'req\')">+ Post a Requirement</button></div>';return;}
+  wrap.innerHTML=st.requirements.map((r,ri)=>{
+    const cands=DIR.map(co=>{let s=54;if(co.state===r.geo)s+=18;s+=co.tier*6;if(co.vetted)s+=6;s+=(co.name.charCodeAt(2)+ri)%9;return{co,s:Math.min(s,98)};}).sort((a,b)=>b.s-a.s).slice(0,3);
+    return '<div class="mreq"><div class="mreq-h"><span class="d" style="background:'+r.dot+'"></span><b>'+r.type+'</b><span>· '+r.product+' · '+r.geo+'</span></div><div class="mgrid">'+cands.map(c=>{
+      const col=c.s>=85?'var(--mint-d)':c.s>=70?'var(--navy)':'var(--amber)';
+      const already=st.sentRequests.some(x=>x.to===c.co.id); // BR-12 duplicate-pending guard (client-side demo)
+      // RESOLVED 2026-07-22 (BR-21): Connect from a match now goes through the same BR-11
+      // contact gate Directory already had — no more free-for-all connecting from Matches.
+      const btn=!canDemoConnect()
+        ?'<button class="dcta out" style="flex:1;padding:8px;" disabled title="Contact gated by entity & AUM">🔒 Restricted</button>'
+        :already
+        ?'<button class="dcta out" style="flex:1;padding:8px;" disabled>Requested ✓</button>'
+        :'<button class="dcta" style="flex:1;padding:8px;" onclick="sendConnectRequest(\''+c.co.id+'\',this)">Connect</button>';
+      return '<div class="mcard"><div class="mc-top"><span class="mc-av" style="background:'+c.co.color+'">'+c.co.id+'</span><div><div class="mc-n">'+c.co.name.split(' ').slice(0,2).join(' ')+'</div><div class="mc-t">'+c.co.type+' · '+c.co.state+'</div></div></div><div class="mc-score"><div class="mc-bw"><div class="mc-b" style="width:'+c.s+'%;background:'+col+'"></div></div><span class="mc-pct" style="color:'+col+'">'+c.s+'%</span></div><div class="mc-f"><span>AUM</span><b>'+(c.co.aum>0?'₹'+c.co.aum+' Cr':'N/A')+'</b></div><div class="mc-f"><span>Staff</span><b>'+c.co.staff+'</b></div><div class="mc-f"><span>Verification</span><b>Tier '+c.co.tier+'</b></div><div class="mc-act">'+btn+'<button class="dcta out" style="padding:8px 12px;" onclick="railGo(\'directory\')">View</button></div></div>';
+    }).join('')+'</div></div>';
+  }).join('');
+}
+// BR-11 (mirrors helper.go's canViewContact): contact/connect only for lender-type entities
+// (NBFC/Bank/HFC/Co-Lending NBFC) with AUM >= 100 Cr. Demo user defaults to a DSA firm with
+// no AUM, so this returns false — same locked state Directory already shows.
+const LENDER_ENTITY_TYPES=['NBFC','Bank','HFC','Co-Lending NBFC'];
+function canDemoConnect(){return LENDER_ENTITY_TYPES.indexOf(st.entity)>=0 && (st.aum||0)>=100;}
+// BR-12: sends a connect request (PENDING); duplicate-pending to the same target is blocked
+// client-side here — the real system returns 409 (see 02b-test-spec.md TC-BR-12-01).
+function sendConnectRequest(coId,btn){
+  if(!canDemoConnect())return; // BR-21/BR-11 gate — should already be unreachable (button disabled)
+  if(st.sentRequests.some(r=>r.to===coId))return;
+  st.sentRequests.push({to:coId,status:'PENDING'});
+  if(btn){btn.textContent='Requested ✓';btn.disabled=true;btn.classList.add('out');}
+}
+
+// ── Connect Requests inbox (US-08, BR-12/BR-13) ──
+function renderRequests(){
+  const wrap=document.getElementById('requestsWrap');
+  const pending=incomingRequests.filter(r=>r.status==='PENDING');
+  let html='<div class="sub-lbl">Incoming — action needed (BR-13: PENDING → ACCEPTED / REJECTED)</div>';
+  if(!pending.length){
+    html+='<div class="empty" style="padding:34px;"><div class="ei">📥</div><h3 style="font-size:15px;">No pending requests</h3><p style="font-size:12.5px;">Connect requests from other organisations will appear here.</p></div>';
+  }else{
+    html+=pending.map(r=>{
+      const co=DIR.filter(c=>c.id===r.from)[0];
+      return '<div class="rl-card" style="align-items:flex-start;padding:13px 15px;">'+
+        '<span class="dav" style="background:'+co.color+'">'+co.id+'</span>'+
+        '<div style="flex:1;"><div class="rl-t">'+co.name+'</div><div class="rl-m">'+co.type+' · '+co.state+'</div><div class="rl-m" style="margin-top:4px;font-style:italic;">"'+r.msg+'"</div></div>'+
+        '<div style="display:flex;gap:7px;flex-shrink:0;">'+
+          '<button class="dcta" style="width:auto;padding:8px 14px;" onclick="acceptRequest(\''+r.id+'\')">Accept</button>'+
+          '<button class="dcta out" style="width:auto;padding:8px 14px;" onclick="rejectRequest(\''+r.id+'\')">Reject</button>'+
+        '</div></div>';
+    }).join('');
+  }
+  html+='<div class="sub-lbl" style="margin-top:22px;">Sent by you</div>';
+  html+=st.sentRequests.length?st.sentRequests.map(r=>{
+    const co=DIR.filter(c=>c.id===r.to)[0];
+    return '<div class="rl-card"><span class="rl-dot" style="background:'+co.color+'"></span><div><div class="rl-t">'+co.name+'</div><div class="rl-m">Sent · awaiting response</div></div><span class="rl-s" style="background:var(--as);color:var(--amber);">PENDING</span></div>';
+  }).join(''):'<div style="font-size:12.5px;color:var(--muted);padding:6px 0;">You haven\'t sent any connect requests yet — send one from My Matches.</div>';
+  wrap.innerHTML=html;
+}
+// BR-13: accepting a PENDING response creates (or reactivates) a channel relationship.
+function acceptRequest(id){
+  const r=incomingRequests.filter(x=>x.id===id)[0];if(!r||r.status!=='PENDING')return; // 409 guard if not PENDING
+  r.status='ACCEPTED';
+  const co=DIR.filter(c=>c.id===r.from)[0];
+  if(!st.partners.some(p=>p.id===co.id))st.partners.push({id:co.id,name:co.name,type:co.type,color:co.color,since:'22-07-2026'});
+  renderRequests();
+}
+// BR-13: rejecting a PENDING response — no relationship created.
+function rejectRequest(id){
+  const r=incomingRequests.filter(x=>x.id===id)[0];if(!r||r.status!=='PENDING')return;
+  r.status='REJECTED';
+  renderRequests();
+}
+
+// ── My Partners (US-09) — core_channel_relationship, relationship_status=ACTIVE ──
+function renderPartners(){
+  const wrap=document.getElementById('partnersWrap');
+  if(!st.partners.length){wrap.innerHTML='<div class="empty"><div class="ei">🤝</div><h3>No partners yet</h3><p>Accept a connect request, or get accepted after sending one, to build your partner network.</p></div>';return;}
+  wrap.innerHTML=st.partners.map(p=>'<div class="rl-card"><span class="dav" style="background:'+p.color+'">'+p.id+'</span><div><div class="rl-t">'+p.name+'</div><div class="rl-m">'+p.type+' · Partner since '+p.since+'</div></div><span class="rl-s">✓ ACTIVE</span></div>').join('');
+}
+
+// ── Demo reset ──
+function resetAll(){
+  st={name:'Ramesh Kumar',desg:'Business Head',terr:'Coimbatore',entity:'DSA — Firm / LLP',aum:0,companyPct:0,requirements:[],sentRequests:[],partners:[]};
+  incomingRequests=[
+    {id:'REQ-1',from:'FL',status:'PENDING',msg:'Interested in a DSA tie-up for two-wheeler sourcing in TN.'},
+    {id:'REQ-2',from:'GF',status:'PENDING',msg:'Exploring co-lending partnership for MSME book.'},
+  ];
+  showHome();
+}
+
+// init
+renderRail('dashboard');
+showHome();
+</script>
+</body>
+</html>
