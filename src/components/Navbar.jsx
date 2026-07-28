@@ -329,6 +329,15 @@ export default function Navbar() {
           {/* CTA Button */}
           <div className="hidden lg:flex items-center gap-3">
             <Link
+              to="/connect/login"
+              className="relative px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-500 ease-out"
+              style={{
+                color: scrolled ? '#ffffff' : '#01347c',
+              }}
+            >
+              Community
+            </Link>
+            <Link
               to="/contact"
               className="relative px-6 py-2.5 text-sm font-semibold rounded-xl overflow-hidden group transition-all duration-500 ease-out hover:-translate-y-0.5"
               style={{
@@ -404,7 +413,13 @@ export default function Navbar() {
               {navItems.map((item) => (
                 <MobileNavItem key={item.label} item={item} />
               ))}
-              <div className="mt-4 pt-4 border-t border-gray-100">
+              <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-2">
+                <Link
+                  to="/connect/login"
+                  className="block w-full text-center px-6 py-3 border border-navy/20 text-navy text-sm font-semibold rounded-xl hover:bg-navy/5 transition-all duration-300"
+                >
+                  Community
+                </Link>
                 <Link
                   to="/contact"
                   className="block w-full text-center px-6 py-3 bg-gradient-to-r from-navy to-blue text-white text-sm font-semibold rounded-xl hover:shadow-lg transition-all duration-300"

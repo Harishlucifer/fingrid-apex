@@ -1,8 +1,32 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Outlet, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
+
+// Fingrid Connect — mounted OUTSIDE the marketing Navbar/Footer, per
+// fingrid-connect-integration-plan.md's routing decision (Connect is a stateful, logged-in
+// "app" zone, not a marketing page). See src/connect/ for the module itself.
+import { ConnectProvider } from './connect/state/ConnectContext';
+import { TenantProvider } from './connect/state/TenantContext';
+import { LookupsProvider } from './connect/state/LookupsContext';
+import ConnectAuthLayout from './connect/ConnectAuthLayout';
+import ConnectAppLayout from './connect/ConnectAppLayout';
+import ConnectAdminLayout from './connect/ConnectAdminLayout';
+import AdminLogin from './connect/pages/admin/AdminLogin';
+import PartnerOversight from './connect/pages/admin/PartnerOversight';
+import RequirementModeration from './connect/pages/admin/RequirementModeration';
+import OnboardingWizard from './connect/pages/onboarding/OnboardingWizard';
+import SignIn from './connect/pages/onboarding/SignIn';
+import CompanyProfileWizard from './connect/pages/company/CompanyProfileWizard';
+import RequirementWizard from './connect/pages/requirements/RequirementWizard';
+import Dashboard from './connect/pages/home/Dashboard';
+import Directory from './connect/pages/home/Directory';
+import MyRequirements from './connect/pages/home/MyRequirements';
+import Matches from './connect/pages/home/Matches';
+import Requests from './connect/pages/home/Requests';
+import Partners from './connect/pages/home/Partners';
+import PartnerDetail from './connect/pages/home/PartnerDetail';
 import Products from './pages/Products';
 import About from './pages/About';
 import Contact from './pages/Contact';
@@ -52,60 +76,114 @@ function ScrollToTop() {
   return null;
 }
 
+// Wraps every marketing page in the existing Navbar/Footer chrome. Unchanged behavior from
+// before this refactor — only the JSX nesting moved, to make room for /connect/* to render
+// as a sibling route tree that bypasses this chrome entirely.
+function MarketingLayout() {
+  return (
+    <div className="min-h-screen flex flex-col bg-white">
+      <Navbar />
+      <main className="flex-1">
+        <Outlet />
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
 function App() {
   return (
     <Router>
       <ScrollToTop />
-      <div className="min-h-screen flex flex-col bg-white">
-        <Navbar />
-        <main className="flex-1">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/products" element={<Products />} />
+      <Routes>
+        <Route element={<MarketingLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/products" element={<Products />} />
 
-            {/* FinGrid Studio */}
-            <Route path="/products/studio" element={<Studio />} />
+          {/* FinGrid Studio */}
+          <Route path="/products/studio" element={<Studio />} />
 
-            {/* FinGrid Stacks */}
-            <Route path="/products/stacks" element={<Stacks />} />
-            <Route path="/products/stacks/marketing" element={<StacksMarketing />} />
-            <Route path="/products/stacks/sales" element={<StacksSales />} />
-            <Route path="/products/stacks/credit" element={<StacksCredit />} />
-            <Route path="/products/stacks/loan-lifecycle" element={<StacksLoanLifecycle />} />
-            <Route path="/products/stacks/collections" element={<StacksCollections />} />
-            <Route path="/products/stacks/accounting" element={<StacksAccounting />} />
+          {/* FinGrid Stacks */}
+          <Route path="/products/stacks" element={<Stacks />} />
+          <Route path="/products/stacks/marketing" element={<StacksMarketing />} />
+          <Route path="/products/stacks/sales" element={<StacksSales />} />
+          <Route path="/products/stacks/credit" element={<StacksCredit />} />
+          <Route path="/products/stacks/loan-lifecycle" element={<StacksLoanLifecycle />} />
+          <Route path="/products/stacks/collections" element={<StacksCollections />} />
+          <Route path="/products/stacks/accounting" element={<StacksAccounting />} />
 
-            {/* FinGrid OS */}
-            <Route path="/products/os" element={<FinGridOS />} />
-            <Route path="/products/os/lender-os" element={<LenderOS />} />
-            <Route path="/products/os/bc-os" element={<BcOS />} />
-            <Route path="/products/os/dsa-os" element={<DsaOS />} />
-            <Route path="/products/os/lsp-os" element={<LspOS />} />
-            <Route path="/products/os/agency-os" element={<AgencyOS />} />
-            <Route path="/products/os/auto-dealer-os" element={<AutoDealerOS />} />
+          {/* FinGrid OS */}
+          <Route path="/products/os" element={<FinGridOS />} />
+          <Route path="/products/os/lender-os" element={<LenderOS />} />
+          <Route path="/products/os/bc-os" element={<BcOS />} />
+          <Route path="/products/os/dsa-os" element={<DsaOS />} />
+          <Route path="/products/os/lsp-os" element={<LspOS />} />
+          <Route path="/products/os/agency-os" element={<AgencyOS />} />
+          <Route path="/products/os/auto-dealer-os" element={<AutoDealerOS />} />
 
-            {/* FinGrid Network */}
-            <Route path="/products/network" element={<FinGridNetwork />} />
-            <Route path="/products/network/register" element={<NetworkRegister />} />
-            <Route path="/products/network/profile-due-diligence" element={<ProfileDueDiligence />} />
-            <Route path="/products/network/discover" element={<Discover />} />
-            <Route path="/products/network/network" element={<NetworkPage />} />
-            <Route path="/products/network/deal-room" element={<DealRoom />} />
-            <Route path="/products/network/integrate" element={<Integrate />} />
+          {/* FinGrid Network */}
+          <Route path="/products/network" element={<FinGridNetwork />} />
+          <Route path="/products/network/register" element={<NetworkRegister />} />
+          <Route path="/products/network/profile-due-diligence" element={<ProfileDueDiligence />} />
+          <Route path="/products/network/discover" element={<Discover />} />
+          <Route path="/products/network/network" element={<NetworkPage />} />
+          <Route path="/products/network/deal-room" element={<DealRoom />} />
+          <Route path="/products/network/integrate" element={<Integrate />} />
 
-            {/* FinGrid AI */}
-            <Route path="/products/agentic-ai" element={<AgenticAI />} />
+          {/* FinGrid AI */}
+          <Route path="/products/agentic-ai" element={<AgenticAI />} />
 
-            {/* Innovation & GTM */}
-            <Route path="/innovation" element={<Innovation />} />
-            <Route path="/gtm-strategy" element={<GTMStrategy />} />
+          {/* Innovation & GTM */}
+          <Route path="/innovation" element={<Innovation />} />
+          <Route path="/gtm-strategy" element={<GTMStrategy />} />
 
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+        </Route>
+
+        {/* Fingrid Connect admin/internal-staff view (WF5) — a separate identity (Fingrid
+            employee, not a partner channel) with its own login and token, so it's registered
+            as its own subtree rather than nested inside ConnectProvider. React Router ranks
+            this ahead of the more general "/connect/*" route below by specificity regardless
+            of declaration order, but keeping it first here too for readability. */}
+        <Route path="/connect/admin/login" element={<AdminLogin />} />
+        <Route element={<ConnectAdminLayout />}>
+          <Route path="/connect/admin/partners" element={<PartnerOversight />} />
+          <Route path="/connect/admin/requirements" element={<RequirementModeration />} />
+        </Route>
+
+        {/* Fingrid Connect — no marketing Navbar/Footer. Wizards (onboarding/company-profile/
+            requirement-listing) use the chrome-free ConnectAuthLayout; the logged-in home base
+            (dashboard/directory/matches/requests/partners) uses ConnectAppLayout. */}
+        <Route
+          path="/connect/*"
+          element={
+            <TenantProvider>
+            <LookupsProvider>
+            <ConnectProvider>
+              <Routes>
+                <Route element={<ConnectAuthLayout />}>
+                  <Route path="login" element={<SignIn />} />
+                  <Route path="join" element={<OnboardingWizard />} />
+                  <Route path="company" element={<CompanyProfileWizard />} />
+                  <Route path="requirements/new" element={<RequirementWizard />} />
+                </Route>
+                <Route element={<ConnectAppLayout />}>
+                  <Route path="dashboard" element={<Dashboard />} />
+                  <Route path="directory" element={<Directory />} />
+                  <Route path="requirements" element={<MyRequirements />} />
+                  <Route path="matches" element={<Matches />} />
+                  <Route path="requests" element={<Requests />} />
+                  <Route path="partners" element={<Partners />} />
+                  <Route path="partners/:channelId" element={<PartnerDetail />} />
+                </Route>
+              </Routes>
+            </ConnectProvider>
+            </LookupsProvider>
+            </TenantProvider>
+          }
+        />
+      </Routes>
     </Router>
   );
 }
