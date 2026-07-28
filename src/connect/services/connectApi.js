@@ -18,15 +18,23 @@ const BASE_V2 = BASE.replace(/\/alpha\/v1$/, '/alpha/v2');
 
 const TOKEN_KEY = 'connect_jwt';
 const REFRESH_TOKEN_KEY = 'connect_refresh_jwt';
+// Pre-login guest session — see ensureGuestToken(). Modelled on craft-frontend's guestToken
+// (localStorage-persisted, fetched once, reused), NOT re-minted per call the way this file
+// originally did.
+const GUEST_TOKEN_KEY = 'connect_guest_jwt';
 
 export function setConnectToken(token, refreshToken) {
   localStorage.setItem(TOKEN_KEY, token);
   if (refreshToken) localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+  // A real session now exists — the pre-login guest identity is redundant and weaker, so drop
+  // it rather than let any later call keep reaching for it.
+  clearGuestToken();
 }
 
 export function clearConnectToken() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
+  clearGuestToken();
 }
 
 // Used by ConnectAppLayout to gate the logged-in area (dashboard/directory/etc.) — after
@@ -149,10 +157,7 @@ export async function checkIdentity(email) {
 // core_lookup_master rows ({lu_key, lu_name, lu_value, group_code, configuration, status});
 // callers filter by group_code themselves (see LookupsContext.jsx).
 export async function fetchLookupGroups(groupCodes) {
-  const guestToken = await getGuestToken();
-  const res = await fetch(`${BASE}/lookup?group_code=${groupCodes.join(',')}`, {
-    headers: { Authorization: `Bearer ${guestToken}` },
-  });
+  const res = await guestFetch(`/lookup?group_code=${groupCodes.join(',')}`);
   const json = await res.json().catch(() => null);
   if (!res.ok || json?.status !== 1) {
     throw new Error(json?.error ? String(json.error) : 'Failed to load lookup config');
@@ -184,18 +189,73 @@ export async function searchCompanyMaster(keyword, { page = 1, size = 8 } = {}) 
 // invent an id itself (the earlier 'DEMO-' + Date.now() placeholder was wrong for exactly
 // this reason — channel_id is a BIGINT column, not an arbitrary string).
 //
-// Auth bootstrap: createConnectChannel does not check the caller's UserType at all (verified
-// in app/services/application/connect.go — the UserDetails param is discarded), so a
-// no-credentials guest token (POST /v1/auth/guest) is sufficient to call this as a brand-new,
-// unauthenticated website visitor. Verified live: a guest-token call returned a real numeric
-// channel_id. This endpoint does NOT return a session token, though — see verifySignInOtp()
-// below, which must run as a follow-up step to actually get a usable access_token.
-async function getGuestToken() {
+// ---- Guest session (pre-login API access) ----
+// Every pre-login endpoint that needs a token (lookups config, registration, pre-registration
+// OTP) rides on ONE shared guest session rather than minting a brand-new one per call the way
+// this originally did (a single onboarding flow was hitting POST /auth/guest 3+ times). Modelled
+// on craft-frontend's guestToken flow (Components/helper/ApiProvider.js + PartnerOnboarding/
+// PartnerFlow.js): POST /auth/guest once, persist the access_token in localStorage, reuse it,
+// and re-mint transparently if it ever expires (see guestFetch's 401 path).
+//
+// createConnectChannel doesn't check the caller's UserType at all (app/services/application/
+// connect.go — the UserDetails param is discarded), so a no-credentials guest token satisfies
+// every one of these; verified live it returns a real numeric channel_id. Guest calls do NOT
+// return a session token — verifySignInOtp() is the follow-up that yields a usable access_token.
+let guestTokenInFlight = null;
+
+async function fetchGuestToken() {
   const res = await fetch(`${BASE}/auth/guest`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
   const json = await res.json().catch(() => null);
   const token = json?.data?.user?.access_token;
-  if (!token) throw new Error('Could not obtain a guest session to register with');
+  if (!token) throw new Error('Could not obtain a guest session');
   return token;
+}
+
+// Returns the shared guest token, minting + persisting it on first use. Concurrent first-load
+// callers (e.g. LookupsProvider firing while the wizard mounts) share one in-flight request
+// instead of each POSTing /auth/guest — same de-dup pattern as refreshAccessToken above.
+async function ensureGuestToken({ force = false } = {}) {
+  if (!force) {
+    const cached = localStorage.getItem(GUEST_TOKEN_KEY);
+    if (cached) return cached;
+  }
+  if (!guestTokenInFlight) {
+    guestTokenInFlight = fetchGuestToken()
+      .then((token) => { localStorage.setItem(GUEST_TOKEN_KEY, token); return token; })
+      .finally(() => { guestTokenInFlight = null; });
+  }
+  return guestTokenInFlight;
+}
+
+function clearGuestToken() {
+  localStorage.removeItem(GUEST_TOKEN_KEY);
+}
+
+// Warms the shared guest session up front so the first real pre-login call doesn't pay for it.
+// Optional — every guestFetch/ensureGuestToken caller lazily bootstraps anyway; this just lets
+// app startup (e.g. LookupsProvider) pre-fetch. Best-effort: a failure here is non-fatal, the
+// lazy path will retry on the next call.
+export function initGuestSession() {
+  return ensureGuestToken().catch(() => null);
+}
+
+// fetch() against a protected pre-login endpoint with the shared guest token attached. If the
+// stored guest token has expired (server 401s), it's re-minted once and the call retried, so a
+// stale token self-heals instead of surfacing as an auth error mid-onboarding. Returns the raw
+// Response — callers parse/validate the envelope themselves (their success shapes differ).
+async function guestFetch(path, { method = 'GET', headers = {}, body, _retried = false } = {}) {
+  const token = await ensureGuestToken();
+  const res = await fetch(`${BASE}${path}`, {
+    method,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, ...headers },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  if (res.status === 401 && !_retried) {
+    clearGuestToken();
+    await ensureGuestToken({ force: true });
+    return guestFetch(path, { method, headers, body, _retried: true });
+  }
+  return res;
 }
 
 // connectPayload must already match ConnectParams (app/handler/partner/connect.go) exactly:
@@ -203,12 +263,7 @@ async function getGuestToken() {
 // Callers build this shape rather than this function reshaping it, so the mapping stays
 // visible at the call site (OnboardingWizard.jsx) instead of hidden in this service layer.
 export async function registerConnectAccount(connectPayload) {
-  const guestToken = await getGuestToken();
-  const res = await fetch(`${BASE}/partner/create`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${guestToken}` },
-    body: JSON.stringify({ connect: connectPayload }),
-  });
+  const res = await guestFetch('/partner/create', { method: 'POST', body: { connect: connectPayload } });
   const json = await res.json().catch(() => null);
   if (!res.ok || !json || json.status !== 1) {
     const message = json?.error ? (typeof json.error === 'string' ? json.error : JSON.stringify(json.error)) : `Registration failed (${res.status})`;
@@ -227,18 +282,17 @@ export async function registerConnectAccount(connectPayload) {
 // for this tenant, so send/verify use the same TENANT_SPOOF_OTP_CODE ("4024") as sign-in —
 // one real OTP mechanism, not a separate hardcoded demo code.
 async function identityOtpRequest({ email, mobile, otp }) {
-  const guestToken = await getGuestToken();
-  const res = await fetch(`${BASE}/notification/otp`, {
+  const res = await guestFetch('/notification/otp', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${guestToken}`, 'X-Platform': 'PARTNER_PORTAL' },
-    body: JSON.stringify({
+    headers: { 'X-Platform': 'PARTNER_PORTAL' },
+    body: {
       type: 'PARTNER_FLOW',
       name: email || mobile,
       template: 'OTP_PARTNER_REGISTRATION',
       email: email || undefined,
       mobile: mobile || undefined,
       otp: otp || undefined,
-    }),
+    },
   });
   return res.json().catch(() => null);
 }

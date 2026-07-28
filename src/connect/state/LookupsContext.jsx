@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { fetchLookupGroups } from '../services/connectApi';
+import { fetchLookupGroups, initGuestSession } from '../services/connectApi';
 
 const LookupsContext = createContext(null);
 
@@ -107,6 +107,11 @@ export function LookupsProvider({ children }) {
 
   useEffect(() => {
     let cancelled = false;
+    // Warm the shared pre-login guest session once, up front — so the guest token exists before
+    // registration/OTP/lookup calls need it (see ensureGuestToken in connectApi.js). fetchLookupGroups
+    // below would lazily bootstrap it anyway; this makes it explicit and independent of that call
+    // succeeding. Both share one in-flight /auth/guest request, so it's still a single network call.
+    initGuestSession();
     fetchLookupGroups(GROUPS)
       .then((rows) => {
         if (cancelled) return;
