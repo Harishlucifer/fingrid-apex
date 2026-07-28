@@ -9,6 +9,7 @@ import Home from './pages/Home';
 // "app" zone, not a marketing page). See src/connect/ for the module itself.
 import { ConnectProvider } from './connect/state/ConnectContext';
 import { TenantProvider } from './connect/state/TenantContext';
+import { LookupsProvider } from './connect/state/LookupsContext';
 import ConnectAuthLayout from './connect/ConnectAuthLayout';
 import ConnectAppLayout from './connect/ConnectAppLayout';
 import ConnectAdminLayout from './connect/ConnectAdminLayout';
@@ -158,6 +159,7 @@ function App() {
           path="/connect/*"
           element={
             <TenantProvider>
+            <LookupsProvider>
             <ConnectProvider>
               <Routes>
                 <Route element={<ConnectAuthLayout />}>
@@ -177,6 +179,7 @@ function App() {
                 </Route>
               </Routes>
             </ConnectProvider>
+            </LookupsProvider>
             </TenantProvider>
           }
         />

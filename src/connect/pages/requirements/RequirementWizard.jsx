@@ -5,8 +5,8 @@ import StageProgress from '../../components/StageProgress';
 import { Card, CardHeader, Field, Alert } from '../../components/Card';
 import PillSelect from '../../components/PillSelect';
 import { useConnectState } from '../../state/ConnectContext';
+import { useConnectLookups } from '../../state/LookupsContext';
 import { saveRequirement } from '../../services/connectApi';
-import { PARTNERSHIP_TYPES } from '../../data/lookups';
 
 // WF3 — Requirement Listing. 4 stages, not 5 — R3 "What You Offer" (commission/FLDG/terms)
 // was confirmed NOT required by the product owner (2026-07-22) and removed, matching the
@@ -27,6 +27,7 @@ const STAGE_META = [
 
 export default function RequirementWizard() {
   const { channelId } = useConnectState();
+  const { partnershipTypes: PARTNERSHIP_TYPES } = useConnectLookups();
   const navigate = useNavigate();
   const [stepIdx, setStepIdx] = useState(0);
   const [saving, setSaving] = useState(false);

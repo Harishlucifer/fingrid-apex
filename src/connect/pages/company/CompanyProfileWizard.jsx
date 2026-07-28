@@ -6,8 +6,8 @@ import { Card, CardHeader, Field, Alert } from '../../components/Card';
 import DynamicTable from '../../components/DynamicTable';
 import PillSelect from '../../components/PillSelect';
 import { useConnectState } from '../../state/ConnectContext';
+import { useConnectLookups } from '../../state/LookupsContext';
 import { getProfile, saveProfile, publishProfile } from '../../services/connectApi';
-import { entityByKey, CREDENTIAL_LABELS } from '../../data/lookups';
 
 // WF2 — Company Profile, wired to the REAL API (GET/POST /connect/:channelId/profile,
 // verified working in alpha-api). BR-16 (confirmed 2026-07-22): Digital Capabilities is
@@ -30,6 +30,7 @@ const STAGE_META = {
 export default function CompanyProfileWizard() {
   const { channelId, entityType } = useConnectState();
   const navigate = useNavigate();
+  const { entityByKey, credentialLabels } = useConnectLookups();
   const entity = entityByKey(entityType);
   const isLSP = !!entity.isLSP;
 
@@ -274,7 +275,7 @@ export default function CompanyProfileWizard() {
             </Field>
             {entity.mandatoryCredential && (
               <Alert tone="warning">
-                BR-03: <b>{CREDENTIAL_LABELS[entity.mandatoryCredential]}</b> is mandatory for entity type <b>{entity.label}</b> before publishing.
+                BR-03: <b>{credentialLabels[entity.mandatoryCredential]}</b> is mandatory for entity type <b>{entity.label}</b> before publishing.
               </Alert>
             )}
             <Field label="Regulatory credentials">

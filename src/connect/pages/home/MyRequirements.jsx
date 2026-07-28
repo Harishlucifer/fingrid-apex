@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 import { ClipboardList, Plus, Target, Radio, Users, MapPin } from 'lucide-react';
 import { Card, Alert, PageHeader, StatStrip } from '../../components/Card';
 import { useConnectState } from '../../state/ConnectContext';
+import { useConnectLookups } from '../../state/LookupsContext';
 import { listRequirements, closeRequirement } from '../../services/connectApi';
-import { PARTNERSHIP_TYPES } from '../../data/lookups';
 
 const STATUS_STYLE = {
   DRAFT: { bg: 'var(--c-bg)', color: 'var(--c-muted)' },
@@ -13,10 +13,11 @@ const STATUS_STYLE = {
   CLOSED: { bg: 'var(--c-bg)', color: 'var(--c-muted)' },
 };
 
-const typeLabel = (key) => PARTNERSHIP_TYPES.find((t) => t.key === key)?.label || key || 'Requirement';
+const typeLabel = (key, partnershipTypes) => partnershipTypes.find((t) => t.key === key)?.label || key || 'Requirement';
 
 export default function MyRequirements() {
   const { channelId } = useConnectState();
+  const { partnershipTypes } = useConnectLookups();
   const [items, setItems] = useState([]);
   const [error, setError] = useState(null);
 
@@ -80,7 +81,7 @@ export default function MyRequirements() {
                       <ClipboardList size={18} strokeWidth={2} />
                     </span>
                     <div className="min-w-0">
-                      <div className="text-sm font-bold truncate">{typeLabel(r.partnership_type)}</div>
+                      <div className="text-sm font-bold truncate">{typeLabel(r.partnership_type, partnershipTypes)}</div>
                       {r.context && <div className="text-[11px] truncate" style={{ color: 'var(--c-muted)' }}>{r.context}</div>}
                     </div>
                   </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Handshake, CheckCircle2, Phone, Mail, Lock } from 'lucide-react';
+import { ArrowLeft, Handshake, CheckCircle2, Phone, Mail, Lock, Link2, MapPin, UserRound } from 'lucide-react';
 import { Card, CardHeader, Alert } from '../../components/Card';
 import { useConnectState } from '../../state/ConnectContext';
 import { getDirectoryEntry, listPartners } from '../../services/connectApi';
@@ -84,8 +84,24 @@ export default function PartnerDetail() {
             <div className="text-[11px] font-bold uppercase tracking-wide mb-1" style={{ color: 'var(--c-slate)' }}>Contact</div>
             {entry.contact ? (
               <div className="text-sm space-y-1">
-                <div className="flex items-center gap-1.5"><Phone size={13} strokeWidth={2} /> {entry.contact.mobile}</div>
-                <div className="flex items-center gap-1.5"><Mail size={13} strokeWidth={2} /> {entry.contact.email}</div>
+                {/* Fields rendered per the partner's own onboarding visibility choices — the
+                    backend sends only what this caller may see. As an established partner, any
+                    "on request" fields the partner set are already unlocked here. */}
+                {(entry.contact.person_name || entry.contact.designation) && (
+                  <div className="flex items-center gap-1.5">
+                    <UserRound size={13} strokeWidth={2} />
+                    {[entry.contact.person_name, entry.contact.designation, entry.contact.department].filter(Boolean).join(' · ')}
+                  </div>
+                )}
+                {entry.contact.mobile && <div className="flex items-center gap-1.5"><Phone size={13} strokeWidth={2} /> {entry.contact.mobile}</div>}
+                {entry.contact.email && <div className="flex items-center gap-1.5"><Mail size={13} strokeWidth={2} /> {entry.contact.email}</div>}
+                {entry.contact.linkedin && <div className="flex items-center gap-1.5"><Link2 size={13} strokeWidth={2} /> {entry.contact.linkedin}</div>}
+                {entry.contact.territory && <div className="flex items-center gap-1.5"><MapPin size={13} strokeWidth={2} /> {entry.contact.territory}</div>}
+                {entry.contact_pending_connect && (
+                  <div className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--c-muted)' }}>
+                    <Lock size={12} strokeWidth={2} /> Some details are set to unlock only for connected partners.
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--c-amber)' }}>

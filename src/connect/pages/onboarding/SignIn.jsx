@@ -57,13 +57,17 @@ export default function SignIn() {
         // partner_category) and no individual name — a plain returning sign-in (as opposed to
         // the onboarding wizard, which collects these itself) previously left the whole rest of
         // identity blank, so CompanyProfileWizard's entityByKey('') silently fell back to
-        // ENTITY_TYPES[1] ('dsa_firm') regardless of the real entity type, and the profile
-        // dropdown had nothing to show beyond "Signed in". One extra GET fixes both.
+        // ENTITY_TYPES[1] ('dsa_firm') regardless of the real entity type, and the greeting/
+        // profile dropdown had nothing to show beyond the company name twice over. One extra
+        // GET fixes both — GetProfile now also resolves caller_name from the JWT (see
+        // ProfileResponse.CallerName in alpha-api), since neither core_user nor
+        // core_channel_user ever had anywhere to durably store the signed-in person's own name.
         const payload = { channelId: result.channelId, email: result.user?.email || '', mobile: result.user?.mobile || '', businessName: result.user?.business_name || '', partnerCode: result.user?.partner_code || '' };
         try {
           const p = await getProfile(result.channelId);
           payload.entityType = p.entity_type || '';
           payload.primaryRole = p.primary_role || '';
+          payload.name = p.caller_name || '';
         } catch {
           // non-fatal — identity still mostly populated from the sign-in response above
         }

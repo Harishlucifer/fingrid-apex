@@ -11,7 +11,7 @@ import PillSelect from '../../components/PillSelect';
 import OtpInput from '../../components/OtpInput';
 import { useConnectDispatch } from '../../state/ConnectContext';
 import { useTenantConfig } from '../../state/TenantContext';
-import { ENTITY_TYPES, DESIGNATIONS, DEPARTMENTS, isPersonalDomain, entityByKey } from '../../data/lookups';
+import { useConnectLookups } from '../../state/LookupsContext';
 import {
   registerConnectAccount, sendIdentityOtp, verifyIdentityOtp, sendSignInOtp, resendSignInOtp, verifySignInOtp,
   checkIdentity, searchCompanyMaster,
@@ -19,9 +19,8 @@ import {
 
 const STEPS = ['Identity', 'Your Details', 'Preferences', 'Company', 'Verify'];
 
-// ENTITY_TYPES (data/lookups.js) carries its own emoji `icon` field for other, non-React
-// consumers of that lookup table — mapped to real icon components here rather than importing
-// lucide into a plain data file.
+// Entity-type keys come from the live CHANNEL_ENTITY_TYPE lookup (useConnectLookups(), below)
+// — mapped to real lucide icon components here rather than storing icons in that lookup data.
 const ENTITY_ICONS = {
   dsa_ind: UserRound, dsa_firm: Users, lsp: Link2, bc: Store, nbfc: Landmark, bank: Building2,
   hfc: Home, colender: Handshake, verif_agency: Search, collection_agency: Briefcase,
@@ -35,8 +34,9 @@ const VIS_CODE = { public: 'pub', request: 'req', private: 'priv' };
 // WF1 — User & Identity Onboarding. Wired to the real POST /v1/partner/create (connect
 // sub-object) via a no-credentials guest token — verified live to return a real BIGINT
 // channel_id (see docs/sdd/connect/02-feature-spec.md's WF1 update). BR-14's personal-domain
-// classification is client-side (same PERSONAL_EMAIL_DOMAINS list alpha-api seeds, for instant
-// feedback while typing). The 3-way domain scenario the shared prototype
+// classification runs client-side against the real PERSONAL_EMAIL_DOMAIN lookup (fetched via
+// useConnectLookups(), not hardcoded — see LookupsContext.jsx), for instant feedback while
+// typing. The 3-way domain scenario the shared prototype
 // (connect-flow-prototype.html / stage1_email.html) shows is now real, not stubbed:
 //   - Personal domain -> DSA Individual only (client-side, unchanged).
 //   - Company domain already on the platform -> GET /connect/identity?email= (added
@@ -53,6 +53,7 @@ export default function OnboardingWizard() {
   const dispatch = useConnectDispatch();
   const { tenant, setTenant } = useTenantConfig();
   const tenantName = tenant?.TENANT_NAME || 'Fingrid Connect';
+  const { entityTypes: ENTITY_TYPES, isPersonalDomain, entityByKey, designationsByEntityType, departmentsByEntityType } = useConnectLookups();
 
   const [email, setEmail] = useState('');
   const [domain, setDomain] = useState('');
@@ -112,6 +113,7 @@ export default function OnboardingWizard() {
     setEmailOtpError(null);
     // Domain changed — whatever company resolution was in progress no longer applies.
     setCompanyMode(null);
+    setCompanyChoice(null);
     setIdentityCompany(null);
     setShowEntitySearch(false);
     setMcaQuery(''); setMcaResults([]); setMcaError(null); setSelectedMca(null);
@@ -359,7 +361,7 @@ export default function OnboardingWizard() {
                       <div className="text-xs font-bold" style={{ color: 'var(--c-green)' }}>Joining this company page</div>
                       <div className="text-sm font-bold truncate">{identityCompany.name}</div>
                     </div>
-                    <button type="button" onClick={() => { setCompanyMode(null); setEntityType(''); }} className="flex items-center gap-1 text-xs font-semibold flex-shrink-0" style={{ color: 'var(--c-blue)' }}>
+                    <button type="button" onClick={() => { setCompanyMode(null); setEntityType(''); setCompanyChoice(null); }} className="flex items-center gap-1 text-xs font-semibold flex-shrink-0" style={{ color: 'var(--c-blue)' }}>
                       <Pencil size={11} strokeWidth={2} /> Change
                     </button>
                   </div>
@@ -378,7 +380,22 @@ export default function OnboardingWizard() {
                           {identityCompany.entity_type}{identityCompany.state ? ` · ${identityCompany.state}` : ''}{identityCompany.verification_tier ? ` · ${identityCompany.verification_tier}` : ''}
                         </div>
                       </div>
-                      <button type="button" onClick={() => { setCompanyMode('join'); setEntityType(identityCompany.entity_type); }} className="connect-btn-primary px-3 py-1.5 text-xs flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCompanyMode('join');
+                          setEntityType(identityCompany.entity_type);
+                          // Stage 4 ("company profile completion") only makes sense for someone
+                          // creating a new company — company_completion is a required backend
+                          // field but is never actually read for the join path (join always
+                          // lands as MEMBER, not Page Admin; the existing Admin already owns
+                          // that page's completion), so this is a fixed, valid placeholder
+                          // value rather than something the joining user should be asked to
+                          // choose. See Stage 4's own render below for the matching UI change.
+                          setCompanyChoice('later');
+                        }}
+                        className="connect-btn-primary px-3 py-1.5 text-xs flex-shrink-0"
+                      >
                         Join this page
                       </button>
                     </div>
@@ -553,13 +570,13 @@ export default function OnboardingWizard() {
               </Alert>
             )}
             <Field label="Designation" required>
-              <PillSelect options={DESIGNATIONS[entityType] || DESIGNATIONS.dsa_firm} value={designation} onChange={setDesignation} />
+              <PillSelect options={designationsByEntityType[entityType] || designationsByEntityType.dsa_firm || []} value={designation} onChange={setDesignation} />
             </Field>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Department">
                 <select value={department} onChange={(e) => setDepartment(e.target.value)} className="w-full px-3 py-2.5 rounded-lg text-sm" style={{ border: '1.5px solid var(--c-line)' }}>
                   <option value="">Select…</option>
-                  {(DEPARTMENTS[entityType] || DEPARTMENTS.dsa_firm).map((d) => <option key={d}>{d}</option>)}
+                  {(departmentsByEntityType[entityType] || departmentsByEntityType.dsa_firm || []).map((d) => <option key={d}>{d}</option>)}
                 </select>
               </Field>
               <Field label="Territory / Districts"><input value={territory} onChange={(e) => setTerritory(e.target.value)} placeholder="Coimbatore, Tiruppur" className="w-full px-3 py-2.5 rounded-lg text-sm" style={{ border: '1.5px solid var(--c-line)' }} /></Field>
@@ -603,21 +620,41 @@ export default function OnboardingWizard() {
         {step === 3 && (
           <>
             <h2 className="text-2xl font-bold mb-1">Company profile</h2>
-            <p className="text-[13px] mb-5" style={{ color: 'var(--c-muted)' }}>A complete company page is required to publish partnership requirements.</p>
-            {[
-              { key: 'now', icon: Building2, title: "I'll complete the company profile now", desc: 'Recommended — 10–15 minutes.' },
-              { key: 'later', icon: Clock, title: "I'll complete it later from my dashboard", desc: 'Requirement listings stay locked until then.' },
-              { key: 'invite', icon: Mail, title: "I'll invite a colleague to complete it", desc: 'They get a link; you stay Page Admin.' },
-            ].map((opt) => (
-              <div key={opt.key} onClick={() => setCompanyChoice(opt.key)} className="flex gap-3 p-3.5 rounded-lg cursor-pointer mb-2"
-                style={{ border: `2px solid ${companyChoice === opt.key ? 'var(--c-teal)' : 'var(--c-line)'}`, background: companyChoice === opt.key ? 'var(--c-ts)' : '#fff' }}>
-                <span className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--c-ts)', color: 'var(--c-teal)' }}>
-                  <opt.icon size={17} strokeWidth={2} />
-                </span>
-                <div><div className="text-sm font-bold">{opt.title}</div><div className="text-xs" style={{ color: 'var(--c-muted)' }}>{opt.desc}</div></div>
-              </div>
-            ))}
-            {companyChoice === 'invite' && (
+            {companyMode === 'join' ? (
+              // Joining an existing company page — you land as a MEMBER, not Page Admin (see
+              // app/services/application/connect.go's join branch), so the "how will you
+              // complete the company profile" choice below doesn't apply: that page's
+              // completion is the existing Admin's responsibility, not something a new member
+              // is asked to decide on their way in.
+              <>
+                <p className="text-[13px] mb-5" style={{ color: 'var(--c-muted)' }}>You're joining an existing company page — its profile is managed by that page's Admin.</p>
+                <div className="flex items-center gap-3 p-3.5 rounded-lg mb-2" style={{ background: 'var(--c-gs)', border: '1.5px solid var(--c-gm)' }}>
+                  <Avatar name={identityCompany?.name} size={40} tint="var(--c-gs)" color="var(--c-green)" />
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold" style={{ color: 'var(--c-green)' }}>Joining as a member</div>
+                    <div className="text-sm font-bold truncate">{identityCompany?.name}</div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-[13px] mb-5" style={{ color: 'var(--c-muted)' }}>A complete company page is required to publish partnership requirements.</p>
+                {[
+                  { key: 'now', icon: Building2, title: "I'll complete the company profile now", desc: 'Recommended — 10–15 minutes.' },
+                  { key: 'later', icon: Clock, title: "I'll complete it later from my dashboard", desc: 'Requirement listings stay locked until then.' },
+                  { key: 'invite', icon: Mail, title: "I'll invite a colleague to complete it", desc: 'They get a link; you stay Page Admin.' },
+                ].map((opt) => (
+                  <div key={opt.key} onClick={() => setCompanyChoice(opt.key)} className="flex gap-3 p-3.5 rounded-lg cursor-pointer mb-2"
+                    style={{ border: `2px solid ${companyChoice === opt.key ? 'var(--c-teal)' : 'var(--c-line)'}`, background: companyChoice === opt.key ? 'var(--c-ts)' : '#fff' }}>
+                    <span className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--c-ts)', color: 'var(--c-teal)' }}>
+                      <opt.icon size={17} strokeWidth={2} />
+                    </span>
+                    <div><div className="text-sm font-bold">{opt.title}</div><div className="text-xs" style={{ color: 'var(--c-muted)' }}>{opt.desc}</div></div>
+                  </div>
+                ))}
+              </>
+            )}
+            {companyMode !== 'join' && companyChoice === 'invite' && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2">
                 <Field label="Colleague's name" required><input value={inviteName} onChange={(e) => setInviteName(e.target.value)} className="w-full px-3 py-2.5 rounded-lg text-sm" style={{ border: '1.5px solid var(--c-line)' }} /></Field>
                 <Field label="Colleague's email" required><input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} className="w-full px-3 py-2.5 rounded-lg text-sm" style={{ border: '1.5px solid var(--c-line)' }} /></Field>

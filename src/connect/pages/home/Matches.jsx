@@ -1,11 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
-import { CheckCircle2, Handshake, Target, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, Target, ShieldCheck } from 'lucide-react';
 import { Card, Alert, PageHeader, Avatar } from '../../components/Card';
 import { useConnectState } from '../../state/ConnectContext';
+import { useConnectLookups } from '../../state/LookupsContext';
 import { listMatches, sendConnectRequest, listRequests, listPartners } from '../../services/connectApi';
-import { PARTNERSHIP_TYPES } from '../../data/lookups';
 
-const typeLabel = (key) => PARTNERSHIP_TYPES.find((t) => t.key === key)?.label || key || 'Requirement';
+const typeLabel = (key, partnershipTypes) => partnershipTypes.find((t) => t.key === key)?.label || key || 'Requirement';
 // Ranked colour for the fit score — high fit reads green, mid teal, low muted.
 const scoreColor = (s) => (s >= 70 ? 'var(--c-green)' : s >= 40 ? 'var(--c-teal-d)' : 'var(--c-muted)');
 const BREAKDOWN = [
@@ -24,10 +24,15 @@ const BREAKDOWN = [
 // alpha-api's match candidates aren't filtered against existing relationships or pending
 // requests either (confirmed live — a channel already ACTIVE-partnered with the caller still
 // appears as a "Connect"-able match, and SendRequest only blocks a duplicate *pending* request,
-// not one against an already-partnered channel). Fixed the same way: cross-reference
-// GET /connect/partners and GET /connect/:channelId/requests client-side.
+// not one against an already-partnered channel). Cross-referenced client-side via
+// GET /connect/partners and GET /connect/:channelId/requests — unlike Directory.jsx (which
+// still lists an already-partnered entry with a disabled state, since Directory is a browse of
+// everyone), an already-partnered candidate here is dropped from the list entirely: "My
+// Matches" is meant to surface who's still worth reaching out to, not who you're already
+// working with.
 export default function Matches() {
   const { channelId } = useConnectState();
+  const { partnershipTypes } = useConnectLookups();
   const [groups, setGroups] = useState([]);
   const [error, setError] = useState(null);
   const [actingId, setActingId] = useState(null);
@@ -79,7 +84,11 @@ export default function Matches() {
     }
   };
 
-  const totalMatches = groups.reduce((sum, g) => sum + (g.matches?.length || 0), 0);
+  // Already-partnered candidates are dropped here, before render — see header comment.
+  const visibleGroups = groups
+    .map((g) => ({ ...g, matches: (g.matches || []).filter((m) => !partneredIds.has(m.channel_id)) }))
+    .filter((g) => g.matches.length > 0);
+  const totalMatches = visibleGroups.reduce((sum, g) => sum + g.matches.length, 0);
 
   return (
     <div>
@@ -89,22 +98,25 @@ export default function Matches() {
         subtitle={totalMatches > 0 ? `${totalMatches} candidate${totalMatches > 1 ? 's' : ''} auto-matched to your requirements` : 'Auto-matched candidates ranked by fit'}
       />
       {error && <Alert tone="warning">{error}</Alert>}
-      {groups.length === 0 && !error && (
+      {visibleGroups.length === 0 && !error && (
         <Card className="flex flex-col items-center gap-3 py-12 text-center">
           <Target size={26} strokeWidth={1.5} style={{ color: 'var(--c-faint)' }} />
           <div className="text-sm font-semibold" style={{ color: 'var(--c-slate)' }}>No matches yet</div>
-          <div className="text-xs max-w-xs" style={{ color: 'var(--c-muted)' }}>Post a requirement and candidates ranked by geography, product fit, ticket size and tier will appear here.</div>
+          <div className="text-xs max-w-xs" style={{ color: 'var(--c-muted)' }}>
+            {groups.length > 0
+              ? "You're already partnered with every current candidate — check back after your next requirement matches."
+              : 'Post a requirement and candidates ranked by geography, product fit, ticket size and tier will appear here.'}
+          </div>
         </Card>
       )}
-      {groups.map((g) => (
+      {visibleGroups.map((g) => (
         <div key={g.requirement_id} className="mb-6">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: 'var(--c-ts)', color: 'var(--c-teal-d)' }}>{typeLabel(g.partnership_type)}</span>
+            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: 'var(--c-ts)', color: 'var(--c-teal-d)' }}>{typeLabel(g.partnership_type, partnershipTypes)}</span>
             <span className="text-xs" style={{ color: 'var(--c-muted)' }}>{g.matches.length} candidate{g.matches.length > 1 ? 's' : ''}</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {g.matches.map((m) => {
-              const isPartnered = partneredIds.has(m.channel_id);
               const isPending = !!pendingByTarget[m.channel_id];
               const busy = actingId === m.channel_id;
               const bd = m.breakdown || {};
@@ -142,29 +154,21 @@ export default function Matches() {
                   </div>
 
                   <div className="mt-auto">
-                    {isPartnered ? (
-                      <span className="w-full flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold rounded-lg" style={{ background: 'var(--c-gs)', color: 'var(--c-green)' }}>
-                        <Handshake size={13} strokeWidth={2} /> Already Partners
-                      </span>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          disabled={!m.can_connect || isPending || busy}
-                          onClick={() => connect(m.channel_id, g.requirement_id)}
-                          className="connect-btn-primary w-full py-2.5 text-xs flex items-center justify-center gap-1.5"
-                        >
-                          {isPending ? (<><CheckCircle2 size={13} strokeWidth={2} /> Requested</>) : busy ? 'Sending…' : m.can_connect ? 'Connect' : 'Restricted'}
-                        </button>
-                        {/* Match entries carry no per-candidate reason the way Directory's
-                            contact_locked_reason does — same underlying rule (BR-11), so the same
-                            static explanation applies regardless of which candidate this is. */}
-                        {!m.can_connect && (
-                          <div className="text-[10px] mt-1.5 text-center" style={{ color: 'var(--c-muted)' }}>
-                            Connect requests currently require Lender status with AUM ≥ ₹100 Cr.
-                          </div>
-                        )}
-                      </>
+                    <button
+                      type="button"
+                      disabled={!m.can_connect || isPending || busy}
+                      onClick={() => connect(m.channel_id, g.requirement_id)}
+                      className="connect-btn-primary w-full py-2.5 text-xs flex items-center justify-center gap-1.5"
+                    >
+                      {isPending ? (<><CheckCircle2 size={13} strokeWidth={2} /> Requested</>) : busy ? 'Sending…' : m.can_connect ? 'Connect' : 'Restricted'}
+                    </button>
+                    {/* Match entries carry no per-candidate reason the way Directory's
+                        contact_locked_reason does — same underlying rule (BR-11), so the same
+                        static explanation applies regardless of which candidate this is. */}
+                    {!m.can_connect && (
+                      <div className="text-[10px] mt-1.5 text-center" style={{ color: 'var(--c-muted)' }}>
+                        Connect requests currently require Lender status with AUM ≥ ₹100 Cr.
+                      </div>
                     )}
                   </div>
                 </Card>

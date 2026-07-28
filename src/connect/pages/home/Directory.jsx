@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Phone, Mail, Lock, Handshake, CheckCircle2, ShieldCheck, Wallet } from 'lucide-react';
+import { Search, Phone, Mail, Lock, Handshake, CheckCircle2, ShieldCheck, Wallet, Link2, MapPin, UserRound } from 'lucide-react';
 import { Card, Alert, PageHeader, Avatar } from '../../components/Card';
 import { useConnectState } from '../../state/ConnectContext';
 import { listDirectory, sendConnectRequest, cancelRequest, listRequests, listPartners } from '../../services/connectApi';
@@ -142,8 +142,25 @@ export default function Directory() {
               <div className="flex-1 mb-3">
                 {e.contact ? (
                   <div className="text-xs space-y-1 rounded-lg p-2.5" style={{ background: 'var(--c-bg)' }}>
-                    <div className="flex items-center gap-1.5"><Phone size={12} strokeWidth={2} style={{ color: 'var(--c-muted)' }} /> {e.contact.mobile}</div>
-                    <div className="flex items-center gap-1.5 truncate"><Mail size={12} strokeWidth={2} style={{ color: 'var(--c-muted)' }} /> {e.contact.email}</div>
+                    {/* Which fields appear here is driven by the partner's own onboarding
+                        visibility choices (pub/req/priv) — the backend only sends the ones this
+                        caller is allowed to see, so each is rendered conditionally. */}
+                    {(e.contact.person_name || e.contact.designation) && (
+                      <div className="flex items-center gap-1.5 truncate">
+                        <UserRound size={12} strokeWidth={2} style={{ color: 'var(--c-muted)' }} />
+                        {[e.contact.person_name, e.contact.designation].filter(Boolean).join(' · ')}
+                        {e.contact.department ? <span style={{ color: 'var(--c-muted)' }}> · {e.contact.department}</span> : null}
+                      </div>
+                    )}
+                    {e.contact.mobile && <div className="flex items-center gap-1.5"><Phone size={12} strokeWidth={2} style={{ color: 'var(--c-muted)' }} /> {e.contact.mobile}</div>}
+                    {e.contact.email && <div className="flex items-center gap-1.5 truncate"><Mail size={12} strokeWidth={2} style={{ color: 'var(--c-muted)' }} /> {e.contact.email}</div>}
+                    {e.contact.linkedin && <div className="flex items-center gap-1.5 truncate"><Link2 size={12} strokeWidth={2} style={{ color: 'var(--c-muted)' }} /> {e.contact.linkedin}</div>}
+                    {e.contact.territory && <div className="flex items-center gap-1.5 truncate"><MapPin size={12} strokeWidth={2} style={{ color: 'var(--c-muted)' }} /> {e.contact.territory}</div>}
+                    {e.contact_pending_connect && (
+                      <div className="flex items-start gap-1.5 pt-1 mt-1" style={{ color: 'var(--c-muted)', borderTop: '1px solid var(--c-line)' }}>
+                        <Lock size={11} strokeWidth={2} className="flex-shrink-0 mt-0.5" /> More contact details unlock once you connect.
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="flex items-start gap-1.5 text-[11px] rounded-lg p-2.5" style={{ background: 'var(--c-as)', color: 'var(--c-amber)' }}>

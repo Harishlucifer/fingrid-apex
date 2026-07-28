@@ -139,6 +139,27 @@ export async function checkIdentity(email) {
   return json.data; // { domain, is_personal, company? }
 }
 
+// GET /lookup?group_code=... (app/controllers/v1/lookup/controller.go's List) — real,
+// pre-existing endpoint, seeded for Connect by alpha-api's
+// 20260710120000_FINGRID_CONNECT_ONBOARDING migration (core_lookup_master rows
+// 900001-900012 = CHANNEL_ENTITY_TYPE, 900101-900110 = PERSONAL_EMAIL_DOMAIN). Sits under
+// protectedV1 (RequireLoggedIn + RequireModuleAccess), same as registerConnectAccount below —
+// there's no real session yet this early in onboarding, so this borrows the same guest-token
+// bootstrap rather than assuming one exists. Returns the flat list of matching
+// core_lookup_master rows ({lu_key, lu_name, lu_value, group_code, configuration, status});
+// callers filter by group_code themselves (see LookupsContext.jsx).
+export async function fetchLookupGroups(groupCodes) {
+  const guestToken = await getGuestToken();
+  const res = await fetch(`${BASE}/lookup?group_code=${groupCodes.join(',')}`, {
+    headers: { Authorization: `Bearer ${guestToken}` },
+  });
+  const json = await res.json().catch(() => null);
+  if (!res.ok || json?.status !== 1) {
+    throw new Error(json?.error ? String(json.error) : 'Failed to load lookup config');
+  }
+  return json.data || [];
+}
+
 // GET /employer/?keyword=... (app/controllers/v1/employer/controller.go's McaMasterList) —
 // real, working, public endpoint, but it's an MCA company-REGISTER search only (core_mca_master
 // table: name/CIN/state/incorporation/etc.) — it does not search platform-registered channels
