@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import {
   ArrowRight, ArrowLeft, CheckCircle2, Rocket, Building2, Clock, Mail,
   UserRound, Users, Link2, Store, Landmark, Home, Handshake, Search, Briefcase, Scale, Building,
@@ -12,12 +12,18 @@ import OtpInput from '../../components/OtpInput';
 import { useConnectDispatch } from '../../state/ConnectContext';
 import { useTenantConfig } from '../../state/TenantContext';
 import { useConnectLookups } from '../../state/LookupsContext';
+import { useWorkflowStages } from '../../state/useWorkflowStages';
 import {
   registerConnectAccount, sendIdentityOtp, verifyIdentityOtp, sendSignInOtp, resendSignInOtp, verifySignInOtp,
-  checkIdentity, searchCompanyMaster,
+  checkIdentity, searchCompanyMaster, executeWorkflowStep,
 } from '../../services/connectApi';
 
-const STEPS = ['Identity', 'Your Details', 'Preferences', 'Company', 'Verify'];
+// Fallback stage list — used only if the CONNECT_ONBOARDING workflow can't be built (endpoint
+// down / not seeded yet). Must stay behaviourally identical to the seeded workflow so the UI is
+// unchanged whether the stages come from the DB or here. See useWorkflowStages.
+const ONBOARDING_STAGES = [
+  { name: 'Identity' }, { name: 'Your Details' }, { name: 'Preferences' }, { name: 'Company' }, { name: 'Verify' },
+];
 
 // Entity-type keys come from the live CHANNEL_ENTITY_TYPE lookup (useConnectLookups(), below)
 // — mapped to real lucide icon components here rather than storing icons in that lookup data.
@@ -50,10 +56,37 @@ const VIS_CODE = { public: 'pub', request: 'req', private: 'priv' };
 export default function OnboardingWizard() {
   const [step, setStep] = useState(0);
   const navigate = useNavigate();
+  // :channelId is present when arriving at a resume URL this session already set (see
+  // resumeRegistration below) — mirrors craft-frontend's /register/:id. We don't re-derive
+  // mobile/OTP state from it alone (no ambient way to know the mobile number pre-login without
+  // the email lookup below), just keep local state in sync if it's already there.
+  const { channelId: routeChannelId } = useParams();
   const dispatch = useConnectDispatch();
   const { tenant, setTenant } = useTenantConfig();
   const tenantName = tenant?.TENANT_NAME || 'Fingrid Connect';
   const { entityTypes: ENTITY_TYPES, isPersonalDomain, entityByKey, designationsByEntityType, departmentsByEntityType } = useConnectLookups();
+  // Stage list/order/labels come from the seeded CONNECT_ONBOARDING workflow (editable in the
+  // workflow builder); falls back to ONBOARDING_STAGES if the build call fails. guest:true — this
+  // runs before any account/session exists, so it rides the shared pre-login guest session.
+  const { stages: wfStages } = useWorkflowStages('CONNECT_ONBOARDING', ONBOARDING_STAGES, { guest: true });
+  const STEPS = wfStages.map((s) => s.name);
+
+  // Records CONNECT_ONBOARDING workflow progress once the channel (source) exists. The channel is
+  // only created at registration, so unlike the logged-in wizards these execute in a batch here
+  // rather than per-screen. Sequential + in order (the engine bootstraps the instance on the first
+  // execution, then advances). Guest session (still pre-login), best-effort — the account is
+  // already created via /partner/create, this only layers workflow-engine state on top.
+  const recordOnboardingSteps = async (sourceId, stageObjs) => {
+    for (const s of stageObjs) {
+      if (!s.stepId) continue; // fallback stages carry no step id — nothing to record
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await executeWorkflowStep('CONNECT_ONBOARDING', { stepId: s.stepId, sourceId, guest: true });
+      } catch {
+        /* best-effort */
+      }
+    }
+  };
 
   const [email, setEmail] = useState('');
   const [domain, setDomain] = useState('');
@@ -73,6 +106,12 @@ export default function OnboardingWizard() {
   const [companyMode, setCompanyMode] = useState(null);
   const [identityChecking, setIdentityChecking] = useState(false);
   const [identityCompany, setIdentityCompany] = useState(null); // ChannelSummary from GET /connect/identity
+  // Set when this exact email already has an account (createConnectChannel's own FindByEmail
+  // guard would otherwise hard-error on re-registering) — lets us offer "continue your
+  // registration" instead of the user hitting a dead end at the final Register step.
+  const [existingRegistration, setExistingRegistration] = useState(null);
+  const [resuming, setResuming] = useState(false);
+  const [resumeError, setResumeError] = useState(null);
   const [showEntitySearch, setShowEntitySearch] = useState(false); // "search a different legal entity" under a found company
   const [mcaQuery, setMcaQuery] = useState('');
   const [mcaSearching, setMcaSearching] = useState(false);
@@ -102,7 +141,7 @@ export default function OnboardingWizard() {
 
   const [registering, setRegistering] = useState(false);
   const [registerError, setRegisterError] = useState(null);
-  const [channelId, setChannelId] = useState(null);
+  const [channelId, setChannelId] = useState(routeChannelId || null);
   const [otpSent, setOtpSent] = useState(false);
   const [verifyError, setVerifyError] = useState(null);
 
@@ -115,6 +154,8 @@ export default function OnboardingWizard() {
     setCompanyMode(null);
     setCompanyChoice(null);
     setIdentityCompany(null);
+    setExistingRegistration(null);
+    setResumeError(null);
     setShowEntitySearch(false);
     setMcaQuery(''); setMcaResults([]); setMcaError(null); setSelectedMca(null);
     setCompanyName(''); setCompanyPan('');
@@ -139,9 +180,11 @@ export default function OnboardingWizard() {
         const result = await checkIdentity(email);
         if (identityRequestId.current !== myRequestId) return; // superseded by a newer keystroke
         setIdentityCompany(result?.company || null);
+        setExistingRegistration(result?.existing_registration || null);
       } catch {
         if (identityRequestId.current !== myRequestId) return;
         setIdentityCompany(null); // non-fatal — user can still search/create manually
+        setExistingRegistration(null);
       } finally {
         if (identityRequestId.current === myRequestId) setIdentityChecking(false);
       }
@@ -219,6 +262,32 @@ export default function OnboardingWizard() {
     }
   };
 
+  // "Continue your registration" — this exact email already has an account (see
+  // existingRegistration above). Since createConnectChannel's Stage 4 registration is atomic
+  // (channel + profile + preferences all in one call), the only thing that can realistically be
+  // incomplete is Stage 5 (mobile OTP verify + enter) — so this jumps straight there, sends a
+  // fresh OTP to the mobile already on file, and puts the channel id in the URL (mirrors
+  // craft-frontend's /register/:id) so the resumed session is bookmarkable/shareable.
+  const resumeRegistration = async () => {
+    if (!existingRegistration) return;
+    setResumeError(null);
+    setResuming(true);
+    try {
+      const { channel_id: existingChannelId, mobile: existingMobile } = existingRegistration;
+      setChannelId(existingChannelId);
+      setMobile(existingMobile);
+      await sendSignInOtp(existingMobile);
+      setOtpSent(true);
+      navigate(`/connect/join/${existingChannelId}`, { replace: true });
+      const verifyIdx = STEPS.findIndex((s) => s === 'Verify');
+      setStep(verifyIdx >= 0 ? verifyIdx : STEPS.length - 1);
+    } catch (err) {
+      setResumeError(err.message);
+    } finally {
+      setResuming(false);
+    }
+  };
+
   const PAN_RE = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
   const allowedEntities = personal ? ENTITY_TYPES.filter((e) => e.key === 'dsa_ind') : ENTITY_TYPES;
   // Company resolution is satisfied by exactly one of the three real paths — join (entity type
@@ -280,6 +349,9 @@ export default function OnboardingWizard() {
 
       const { channelId: newChannelId } = await registerConnectAccount(payload);
       setChannelId(newChannelId);
+      // Record every completed onboarding stage EXCEPT the final Verify one (OTP still pending) —
+      // craft's per-step execution, batched here since the channel only just came into existence.
+      await recordOnboardingSteps(newChannelId, wfStages.slice(0, -1));
       await sendSignInOtp(mobile);
       setOtpSent(true);
       setStep(4);
@@ -298,6 +370,9 @@ export default function OnboardingWizard() {
         setVerifyError('Registration succeeded but sign-in did not — your account may need approval before you can enter.');
         return false;
       }
+      // Final stage (Verify) completed now that OTP passed — record it against the channel,
+      // completing the CONNECT_ONBOARDING workflow instance. Best-effort, off the happy path.
+      await recordOnboardingSteps(result.channelId || channelId, wfStages.slice(-1));
       if (result.tenant || result.system) setTenant({ tenant: result.tenant, system: result.system });
       dispatch({
         type: 'SET_IDENTITY',
@@ -344,9 +419,29 @@ export default function OnboardingWizard() {
               </Alert>
             )}
 
+            {/* This exact email already registered (previously a dead-end 422 at the final
+                Register step — createConnectChannel's own FindByEmail guard). Offer to resume
+                instead of the usual company-resolution UI below. */}
+            {existingRegistration && (
+              <div className="flex items-center gap-3 p-3.5 rounded-lg mb-2" style={{ background: 'var(--c-bs)', border: '1.5px solid var(--c-blue)' }}>
+                <Avatar name={existingRegistration.name} size={38} tint="var(--c-bs)" color="var(--c-blue)" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-bold" style={{ color: 'var(--c-blue)' }}>Welcome back</div>
+                  <div className="text-sm font-bold truncate">You already started registering {existingRegistration.name}</div>
+                </div>
+                <button
+                  type="button" disabled={resuming} onClick={resumeRegistration}
+                  className="connect-btn-primary flex-shrink-0 px-4 py-2 text-xs flex items-center gap-1.5"
+                >
+                  {resuming ? 'Sending OTP…' : 'Continue'}
+                </button>
+              </div>
+            )}
+            {resumeError && <Alert tone="error">{resumeError}</Alert>}
+
             {/* Company resolution — the 3-way scenario from the shared prototype, now backed
                 by real endpoints (see this file's header comment). */}
-            {domain && !personal && (
+            {domain && !personal && !existingRegistration && (
               <div className="mb-1">
                 {identityChecking && (
                   <div className="flex items-center gap-2 text-xs py-2" style={{ color: 'var(--c-muted)' }}>

@@ -105,6 +105,9 @@ export default function MyRequirements() {
                 </div>
 
                 <div className="flex items-center gap-2 mt-auto pt-3" style={{ borderTop: '1px solid var(--c-line)' }}>
+                  {r.listing_status === 'DRAFT' && (
+                    <Link to={`/connect/requirements/${r.requirement_id}`} className="connect-btn-outline px-3 py-1.5 text-xs">Continue editing</Link>
+                  )}
                   {(r.match_count || 0) > 0 && (
                     <Link to="/connect/matches" className="connect-btn-outline px-3 py-1.5 text-xs">View matches</Link>
                   )}

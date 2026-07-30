@@ -164,9 +164,16 @@ function App() {
               <Routes>
                 <Route element={<ConnectAuthLayout />}>
                   <Route path="login" element={<SignIn />} />
-                  <Route path="join" element={<OnboardingWizard />} />
+                  {/* :channelId is optional — set when resuming an abandoned registration (see
+                      OnboardingWizard's existing_registration handling), mirroring craft-frontend's
+                      /register/:id, which carries the channel id in the URL once one exists. */}
+                  <Route path="join/:channelId?" element={<OnboardingWizard />} />
                   <Route path="company" element={<CompanyProfileWizard />} />
                   <Route path="requirements/new" element={<RequirementWizard />} />
+                  {/* Resuming an existing draft (see MyRequirements.jsx's "Continue editing")
+                      loads it by id and continues its CONNECT_REQUIREMENT workflow instance from
+                      the same step — matches CompanyProfileWizard's per-channel resume. */}
+                  <Route path="requirements/:requirementId" element={<RequirementWizard />} />
                 </Route>
                 <Route element={<ConnectAppLayout />}>
                   <Route path="dashboard" element={<Dashboard />} />
