@@ -1,0 +1,193 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/*
+  Fingrid Design System v1.0 — ported from the v4 static site's styles.css.
+  The source design system is light-only, so no dark variants are defined.
+*/
+
+@theme {
+  /* ---------- brand ---------- */
+  --color-navy-900: #012756;
+  --color-navy-800: #02347b;
+  --color-blue-500: #3185ff;
+  --color-blue-600: #1e6fe6;
+  --color-blue-300: #5b9bff;
+  --color-mint: #32ea94;
+
+  /* ---------- status ---------- */
+  --color-success: #0e9a5e;
+  --color-success-bg: #e9fcf3;
+  --color-success-ink: #0b6e45;
+  --color-warning: #e0930b;
+  --color-warning-bg: #fdf3e0;
+  --color-warning-ink: #b0740a;
+  --color-danger: #e23d4b;
+  --color-danger-bg: #fce9eb;
+  --color-danger-ink: #c22c3a;
+
+  /* ---------- neutrals ---------- */
+  --color-n950: #041124;
+  --color-n900: #0a1b33;
+  --color-n700: #33415c;
+  --color-n500: #64708a;
+  --color-n400: #939db2;
+  --color-n300: #c4cbd8;
+  --color-n200: #e3e7ef;
+  --color-n100: #eef1f6;
+  --color-n50: #f6f8fc;
+
+  /* ---------- footer / dark-band inks ---------- */
+  --color-band-body: #a9bad8;
+  --color-band-muted: #7c93c4;
+  --color-band-head: #5b7099;
+
+  /* ---------- type ---------- */
+  --font-display: var(--font-space-grotesk), sans-serif;
+  --font-body: var(--font-ibm-plex-sans), system-ui, sans-serif;
+  --font-sans: var(--font-ibm-plex-sans), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), monospace;
+
+  /* ---------- layout ---------- */
+  --container-site: 1180px;
+  --container-nav: 1360px;
+
+  /* ---------- motion ---------- */
+  --animate-fg-pulse: fg-pulse 2.2s ease-in-out infinite;
+
+  @keyframes fg-pulse {
+    0%,
+    100% {
+      opacity: 0.5;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.15);
+    }
+  }
+}
+
+/* shadcn semantic tokens, expressed in Fingrid colours */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --font-heading: var(--font-space-grotesk), sans-serif;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 5px);
+  --radius-2xl: calc(var(--radius) + 8px);
+}
+
+:root {
+  --radius: 12px;
+
+  --background: #f6f8fc;
+  --foreground: #012756;
+  --card: #ffffff;
+  --card-foreground: #012756;
+  --popover: #ffffff;
+  --popover-foreground: #012756;
+  --primary: #012756;
+  --primary-foreground: #ffffff;
+  --secondary: #eef1f6;
+  --secondary-foreground: #012756;
+  --muted: #eef1f6;
+  --muted-foreground: #64708a;
+  --accent: #eef1f6;
+  --accent-foreground: #012756;
+  --destructive: #e23d4b;
+  --destructive-foreground: #ffffff;
+  --border: #e3e7ef;
+  --input: #e3e7ef;
+  --ring: #3185ff;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-body;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply text-navy-900 antialiased;
+    background:
+      radial-gradient(
+        1200px 520px at 86% -10%,
+        rgb(49 133 255 / 0.07),
+        transparent 60%
+      ),
+      radial-gradient(
+        900px 460px at 6% 2%,
+        rgb(50 234 148 / 0.09),
+        transparent 55%
+      ),
+      var(--color-n50);
+    background-attachment: fixed;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+
+  ::selection {
+    background: var(--color-mint);
+    color: var(--color-navy-900);
+  }
+
+  /* The static site linked every anchor blue by default; scope it to prose only. */
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+}
+
+@utility wrap {
+  max-width: var(--container-site);
+  margin-inline: auto;
+  padding-inline: clamp(20px, 4vw, 40px);
+}
+
+/* Gradient wordmark used inside h1 copy */
+@utility text-grad {
+  background: linear-gradient(
+    100deg,
+    var(--color-navy-800),
+    var(--color-blue-500) 55%,
+    var(--color-mint)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
