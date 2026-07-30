@@ -7,9 +7,10 @@
 // Endpoints map 1:1 to app/routes/v1.go's connectAdminRoute group (RequireEmployee-gated),
 // backed by app/services/connect/admin.go. Verified live against the real dev DB — see
 // docs/sdd/connect/09-integration-report.md.
-// Same base as connectApi.js — set via .env's VITE_CONNECT_API_BASE (routes moved to
-// /alpha/v1 2026-07-23, app/routes/v1.go); fallback kept in sync for anyone running without it.
-const BASE = import.meta.env.VITE_CONNECT_API_BASE || 'http://localhost:5050/alpha/v1';
+// Same alpha host as connectApi.js, resolved once in apiConfig.js (single VITE_ALPHA_API_URL
+// host env + the /alpha/v1 prefix appended there — mirrors craft-frontend's ApiEndPoint.js).
+import { ALPHA_V1 as BASE } from './apiConfig';
+
 const TOKEN_KEY = 'connect_admin_token';
 
 export function getAdminToken() {

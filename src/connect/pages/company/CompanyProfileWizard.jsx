@@ -7,6 +7,7 @@ import DynamicTable from '../../components/DynamicTable';
 import PillSelect from '../../components/PillSelect';
 import { useConnectState } from '../../state/ConnectContext';
 import { useConnectLookups } from '../../state/LookupsContext';
+import { useWorkflowStages } from '../../state/useWorkflowStages';
 import { getProfile, saveProfile, publishProfile } from '../../services/connectApi';
 
 // WF2 — Company Profile, wired to the REAL API (GET/POST /connect/:channelId/profile,
@@ -27,6 +28,14 @@ const STAGE_META = {
   Verify: { icon: ClipboardList, iconBg: 'var(--c-gs)', iconColor: 'var(--c-green)', title: 'Verify & Publish', desc: 'Review completion and publish your company page.' },
 };
 
+// Fallback stage list — used only if the CONNECT_COMPANY_PROFILE workflow can't be built. Kept
+// identical to the seeded workflow, including the Digital stage's lsp_only flag (BR-16). See
+// useWorkflowStages.
+const COMPANY_STAGES = [
+  { name: 'Legal Identity' }, { name: 'Operations' }, { name: 'Staff' },
+  { name: 'Empanelments' }, { name: 'Digital', config: { lsp_only: true } }, { name: 'Verify' },
+];
+
 export default function CompanyProfileWizard() {
   const { channelId, entityType } = useConnectState();
   const navigate = useNavigate();
@@ -34,10 +43,25 @@ export default function CompanyProfileWizard() {
   const entity = entityByKey(entityType);
   const isLSP = !!entity.isLSP;
 
-  const allStages = ['Legal Identity', 'Operations', 'Staff', 'Empanelments', 'Digital', 'Verify'];
-  const stages = isLSP ? allStages : allStages.filter((s) => s !== 'Digital');
+  // Stage list/order + per-step ids come from the seeded CONNECT_COMPANY_PROFILE workflow
+  // (editable in the builder). Source = this channel, so build returns the workflow INSTANCE
+  // (saved progress) and executeStep() can advance it. BR-16's LSP-only Digital stage is driven
+  // by the stage's own `lsp_only` config flag rather than a hardcoded name check.
+  const { stages: allWfStages, executeStep, resumeIndex } = useWorkflowStages('CONNECT_COMPANY_PROFILE', COMPANY_STAGES, { sourceId: channelId });
+  const stageObjs = allWfStages.filter((s) => !s.config?.lsp_only || isLSP);
+  const stages = stageObjs.map((s) => s.name);
 
   const [stepIdx, setStepIdx] = useState(0);
+  // Resume where a prior visit left off (craft's setCurrentComponent, keyed off
+  // last_active_step_id) — resumeIndex is into the UNFILTERED stage list, so map it back to this
+  // entity's filtered `stageObjs` position. Fires once per mount/source (see useWorkflowStages).
+  useEffect(() => {
+    if (resumeIndex == null) return;
+    const targetStepId = allWfStages[resumeIndex]?.stepId;
+    const filteredIdx = stageObjs.findIndex((s) => s.stepId === targetStepId);
+    if (filteredIdx > 0) setStepIdx(filteredIdx);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resumeIndex]);
   const stageName = stages[stepIdx];
   const meta = STAGE_META[stageName];
 
@@ -73,6 +97,7 @@ export default function CompanyProfileWizard() {
         setOperations({ aum: p.operations.aum || '', monthly_disbursal: p.operations.monthly_disbursal || '' });
         setLoanMix(p.operations.loan_mix || []);
         setProducts(p.operations.products || []);
+        setBranches(p.operations.branches || []); // now round-trips (API returns the array, not just branch_count)
         // Geography is an array of {states,districts} groups server-side (matches
         // Requirement Listing's shape); this wizard only ever writes one flat group, so
         // flatten every group's states back into one list for the pill selector.
@@ -199,7 +224,13 @@ export default function CompanyProfileWizard() {
     } else if (stageName === 'Digital') {
       ok = await saveStage('CAPABILITIES', { capabilities });
     }
-    if (ok && stepIdx < stages.length - 1) setStepIdx(stepIdx + 1);
+    if (ok) {
+      // Record workflow-engine progress for this stage (craft's per-step execution). Best-effort:
+      // the profile data is already persisted by saveStage above; this only advances the
+      // CONNECT_COMPANY_PROFILE instance's task_status. No-ops if the workflow layer is unavailable.
+      executeStep(stageObjs[stepIdx]?.stepId);
+      if (stepIdx < stages.length - 1) setStepIdx(stepIdx + 1);
+    }
   };
 
   const doPublish = async () => {
@@ -207,6 +238,9 @@ export default function CompanyProfileWizard() {
     try {
       const p = await publishProfile(channelId);
       setProfileMeta(p);
+      // Verify is the last stage and has no "Save & Next" (goNext is hidden here — see the
+      // footer below), so this is the only place its step ever completes.
+      executeStep(stageObjs[stepIdx]?.stepId);
     } catch (e) {
       // BR-03: 409 with a message naming the missing mandatory credential — surfaced verbatim.
       setPublishError(e.message);
@@ -217,6 +251,15 @@ export default function CompanyProfileWizard() {
 
   return (
     <div>
+      {/* Every stage save already persists (saveStage below) and the workflow instance tracks
+          progress server-side (see resumeIndex above) — so leaving mid-wizard loses nothing;
+          the next visit picks up right where this one left off. */}
+      <button
+        type="button" onClick={() => navigate('/connect/dashboard')}
+        className="flex items-center gap-1.5 text-xs font-semibold mb-3" style={{ color: 'var(--c-slate)' }}
+      >
+        <ArrowLeft size={14} strokeWidth={2} /> Back to Dashboard
+      </button>
       <StageProgress workflowLabel="Company Profile" stageLabel={stageName} currentIndex={stepIdx} total={stages.length} />
       {apiError && <Alert tone="warning">{apiError} — form still works locally for review.</Alert>}
       {validationError && <Alert tone="error">{validationError}</Alert>}

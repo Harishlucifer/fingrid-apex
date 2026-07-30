@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Handshake, Package, ShieldCheck, ClipboardList, ArrowLeft, ArrowRight, Rocket } from 'lucide-react';
 import StageProgress from '../../components/StageProgress';
 import { Card, CardHeader, Field, Alert } from '../../components/Card';
 import PillSelect from '../../components/PillSelect';
 import { useConnectState } from '../../state/ConnectContext';
 import { useConnectLookups } from '../../state/LookupsContext';
-import { saveRequirement } from '../../services/connectApi';
+import { useWorkflowStages } from '../../state/useWorkflowStages';
+import { getRequirement, saveRequirement } from '../../services/connectApi';
 
 // WF3 — Requirement Listing. 4 stages, not 5 — R3 "What You Offer" (commission/FLDG/terms)
 // was confirmed NOT required by the product owner (2026-07-22) and removed, matching the
@@ -17,7 +18,11 @@ import { saveRequirement } from '../../services/connectApi';
 // CompanyProfileWizard: stage badge + thin progress bar (StageProgress) instead of a circular
 // stepper, a card-top icon/title/desc header (CardHeader) inside each stage's card, and
 // Back/Next buttons in a footer BELOW the card rather than one full-width button inside it.
-const STAGES = ['Type & Context', 'What You Need', 'Criteria', 'Review'];
+// Fallback stage list — used only if the CONNECT_REQUIREMENT workflow can't be built. Kept
+// identical to the seeded workflow so the UI is unchanged either way. See useWorkflowStages.
+const REQUIREMENT_STAGES = [
+  { name: 'Type & Context' }, { name: 'What You Need' }, { name: 'Criteria' }, { name: 'Review' },
+];
 const STAGE_META = [
   { icon: Handshake, iconBg: 'var(--c-bs)', iconColor: 'var(--c-blue)', title: 'What partnership are you seeking?', desc: 'Partnership type, product focus, and background context.' },
   { icon: Package, iconBg: 'var(--c-ts)', iconColor: 'var(--c-teal)', title: 'What you need from the partner', desc: 'Geography, volume, ticket size, and turnaround expectations.' },
@@ -29,11 +34,15 @@ export default function RequirementWizard() {
   const { channelId } = useConnectState();
   const { partnershipTypes: PARTNERSHIP_TYPES } = useConnectLookups();
   const navigate = useNavigate();
+  // Present when resuming an existing draft (see MyRequirements.jsx's "Continue editing" link) —
+  // distinct from a brand-new "requirements/new" visit, which has no id yet.
+  const { requirementId: routeRequirementId } = useParams();
   const [stepIdx, setStepIdx] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(!!routeRequirementId);
   const [error, setError] = useState(null);
   const [validationError, setValidationError] = useState(null);
-  const [requirementId, setRequirementId] = useState(null);
+  const [requirementId, setRequirementId] = useState(routeRequirementId || null);
 
   const [partnershipType, setPartnershipType] = useState('');
   const [context, setContext] = useState('');
@@ -50,6 +59,51 @@ export default function RequirementWizard() {
   const [minAum, setMinAum] = useState('');
   const [minBranches, setMinBranches] = useState('');
   const [minFieldStaff, setMinFieldStaff] = useState('');
+
+  // Stage list/order + per-step ids come from the seeded CONNECT_REQUIREMENT workflow (editable
+  // in the builder), falling back to REQUIREMENT_STAGES. Source = THIS requirement (not the
+  // channel — a channel posts many requirements, each with its own progress), so build returns
+  // the workflow INSTANCE and executeStep() advances it. Null until the first save creates one,
+  // same as onboarding before registration — nothing to resume yet on a brand-new draft.
+  const { stages: wfStages, executeStep, resumeIndex } = useWorkflowStages('CONNECT_REQUIREMENT', REQUIREMENT_STAGES, { sourceId: requirementId });
+  const STAGES = wfStages.map((s) => s.name);
+
+  // Resume where a prior visit left off (craft's setCurrentComponent) — fires once per mount/
+  // requirementId (see useWorkflowStages).
+  useEffect(() => {
+    if (resumeIndex != null) setStepIdx(resumeIndex);
+  }, [resumeIndex]);
+
+  // Editing an existing draft — load its saved fields (the workflow instance only tracks step
+  // progress, not the form data itself).
+  useEffect(() => {
+    if (!routeRequirementId || !channelId) return;
+    let cancelled = false;
+    getRequirement(channelId, routeRequirementId)
+      .then((r) => {
+        if (cancelled) return;
+        setPartnershipType(r.partnership_type || '');
+        setContext(r.context || '');
+        setProducts(r.products || []);
+        setStates(r.need?.geography?.states || []);
+        setTargetVolume(r.need?.target_volume || '');
+        setTicketMin(r.need?.ticket_min ?? '');
+        setTicketMax(r.need?.ticket_max ?? '');
+        setCasesPerMonth(r.need?.cases_per_month ?? '');
+        setExpectedTat(r.need?.expected_tat || '');
+        setMinTier(r.criteria?.min_verification_tier || '');
+        setMinAum(r.criteria?.min_aum ?? '');
+        setMinBranches(r.criteria?.min_branches ?? '');
+        setMinFieldStaff(r.criteria?.min_field_staff ?? '');
+      })
+      .catch((e) => setError(e.message))
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [routeRequirementId, channelId]);
 
   useEffect(() => { setValidationError(null); }, [stepIdx]);
 
@@ -111,7 +165,14 @@ export default function RequirementWizard() {
     if (validationMessage) { setValidationError(validationMessage); return; }
     setValidationError(null);
     const r = await save();
-    if (r) setStepIdx(stepIdx + 1);
+    if (r) {
+      // Record workflow-engine progress for this stage (craft's per-step execution). Uses r's
+      // requirement_id directly rather than the requirementId state, which won't have committed
+      // yet on the very first save. Best-effort — the requirement is already persisted by save()
+      // above. No-op if the workflow is unavailable.
+      executeStep(wfStages[stepIdx]?.stepId, { sourceId: r.requirement_id });
+      setStepIdx(stepIdx + 1);
+    }
   };
 
   const publish = async () => {
@@ -119,13 +180,29 @@ export default function RequirementWizard() {
     if (validationMessage) { setValidationError(validationMessage); return; }
     setValidationError(null);
     const r = await save({ listing_status: 'LIVE' });
-    if (r) navigate('/connect/requirements');
+    if (r) {
+      // Review is the last stage and has no "Save & Next" — this is the only place its step
+      // ever completes. Best-effort, after the real publish above.
+      executeStep(wfStages[stepIdx]?.stepId, { sourceId: r.requirement_id });
+      navigate('/connect/requirements');
+    }
   };
+
+  if (loading) return <Card className="text-center py-10">Loading requirement…</Card>;
 
   const StageIcon = STAGE_META[stepIdx].icon;
 
   return (
     <div>
+      {/* Every stage save already persists (save() above) and the workflow instance tracks
+          progress server-side (see resumeIndex above) — a DRAFT can be safely left and resumed
+          later from MyRequirements.jsx's "Continue editing" link. */}
+      <button
+        type="button" onClick={() => navigate('/connect/dashboard')}
+        className="flex items-center gap-1.5 text-xs font-semibold mb-3" style={{ color: 'var(--c-slate)' }}
+      >
+        <ArrowLeft size={14} strokeWidth={2} /> Back to Dashboard
+      </button>
       <StageProgress workflowLabel="Requirement Listing" stageLabel={STAGES[stepIdx]} currentIndex={stepIdx} total={STAGES.length} />
       {error && <Alert tone="error">{error}</Alert>}
       {validationError && <Alert tone="error">{validationError}</Alert>}

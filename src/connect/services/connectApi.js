@@ -4,17 +4,16 @@
 // docs/sdd/connect/05-api-contracts.md v3.0 (WF1/WF2/WF3 built + verified in alpha-api;
 // WF4 built in this session, not yet integration-tested against a live server).
 //
-// Base URL: alpha-api's dev port is 5050 (from alpha-api/.env APP_PORT), routes mounted under
-// /alpha/v1 (app/routes/v1.go — not /v1, that changed 2026-07-23). Set via .env's
-// VITE_CONNECT_API_BASE (see fingrid-apex/.env); the fallback below matches it for anyone
-// running without that file. No proxy is configured in vite.config.js yet; requests will fail
-// with a CORS/connection error until either a dev proxy is added there or alpha-api enables
-// CORS for this origin. Flagging rather than silently assuming it works.
-const BASE = import.meta.env.VITE_CONNECT_API_BASE || 'http://localhost:5050/alpha/v1';
+// Base URLs come from apiConfig.js — a single host env value (VITE_ALPHA_API_URL, e.g.
+// http://localhost:5050 from alpha-api/.env APP_PORT) with the /alpha/v1 · /alpha/v2 prefixes
+// appended there, mirroring craft-frontend's ApiEndPoint.js. No proxy is configured in
+// vite.config.js yet; requests fail with a CORS/connection error until a dev proxy is added
+// there or alpha-api enables CORS for this origin. Flagging rather than silently assuming it works.
+//
 // /auth/refresh exists under both v1 and v2 (app/routes/v1.go, app/routes/v2.go) but /auth/logout
 // (app/controllers/v2/auth/controller.go's Logout) is only mounted under v2 — so logout must
 // target the v2 base regardless of which base this app otherwise talks to.
-const BASE_V2 = BASE.replace(/\/alpha\/v1$/, '/alpha/v2');
+import { ALPHA_V1 as BASE, ALPHA_V2 as BASE_V2 } from './apiConfig';
 
 const TOKEN_KEY = 'connect_jwt';
 const REFRESH_TOKEN_KEY = 'connect_refresh_jwt';
@@ -311,6 +310,54 @@ export async function verifyIdentityOtp({ email, mobile, otp }) {
     throw new Error(json?.error ? String(json.error) : 'Invalid or expired OTP');
   }
   return true;
+}
+
+// ---- Workflow engine (build + execution) — mirrors craft-frontend's PartnerFlow ----
+// Two real, pre-existing endpoints, wired exactly the way craft's PartnerFlow.js does it
+// (loadWorkflow + workflowBuild/execution), against the seeded CONNECT_* workflows. NO backend
+// change — verified live that the generic engine handles the CONNECT_* types.
+//
+// buildWorkflow = craft's loadWorkflow = "get the particular workflow". POST /workflow/build
+// (Builder). Without source_id it returns the workflow TEMPLATE (stages/steps). WITH source_id it
+// returns the workflow INSTANCE for that entity: workflow_instance_id, last_active_step_id, and
+// per-step task_status (2 = done, 1 = active, null/0 = pending) + edit_mode — i.e. saved progress.
+// `guest:true` rides the shared pre-login guest session (onboarding, before an account exists);
+// logged-in wizards use the normal session via request().
+export async function buildWorkflow(workflowType, { data = {}, sourceId = null, workflowInstanceId = null, guest = false } = {}) {
+  const body = { workflow_type: workflowType, data };
+  if (sourceId) body.source_id = String(sourceId);
+  // If we already resolved the instance on a prior build, target it directly — the Builder's
+  // workflow_instance_id branch (FindByID) loads that exact instance instead of re-resolving
+  // via source_id each time. Craft's BuilderObject carries the same field.
+  if (workflowInstanceId) body.workflow_instance_id = String(workflowInstanceId);
+  if (guest) {
+    const res = await guestFetch('/workflow/build', { method: 'POST', body });
+    const json = await res.json().catch(() => null);
+    if (!res.ok || json?.status !== 1) {
+      throw new Error(json?.error ? String(json.error) : 'Failed to build workflow');
+    }
+    return json.data;
+  }
+  return request('/workflow/build', { method: 'POST', body });
+}
+
+// executeWorkflowStep = craft's workflowBuild(stepID, id) = advance one step of the particular
+// workflow. POST /workflow/execution (Execution) marks that step's task complete and activates
+// the next; the caller then re-builds (with source_id) to pick up the new task_status/
+// last_active_step_id, exactly like craft calls loadWorkflow(id,0) after each execution. Requires
+// a real source entity (channel/requirement id) — there's nothing to attach progress to before
+// one exists. Returns the refreshed workflow the endpoint echoes back.
+export async function executeWorkflowStep(workflowType, { stepId, sourceId, guest = false } = {}) {
+  const body = { workflow_type: workflowType, source_id: String(sourceId), execute_step_id: String(stepId) };
+  if (guest) {
+    const res = await guestFetch('/workflow/execution', { method: 'POST', body });
+    const json = await res.json().catch(() => null);
+    if (!res.ok || json?.status !== 1) {
+      throw new Error(json?.error ? String(json.error) : 'Failed to execute workflow step');
+    }
+    return json.data;
+  }
+  return request('/workflow/execution', { method: 'POST', body });
 }
 
 // ---- Sign-in (returning partner) ----
