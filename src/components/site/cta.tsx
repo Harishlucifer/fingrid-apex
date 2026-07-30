@@ -14,7 +14,7 @@ export function Eyebrow({
   return (
     <div
       className={cn(
-        "text-success font-mono text-[12.5px] font-semibold tracking-[0.16em] uppercase",
+        "flex items-center gap-2.5 font-mono text-[11.5px] font-semibold tracking-[0.15em] text-success uppercase before:h-px before:w-7 before:bg-mint",
         className,
       )}
     >
@@ -35,13 +35,17 @@ export function SectionHeader({
 }) {
   if (!title) return null;
   return (
-    <div>
-      {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-      <h2 className="font-display mt-3 mb-1.5 text-[clamp(25px,3.4vw,38px)] leading-[1.1] font-bold tracking-[-0.028em]">
-        {title}
-      </h2>
+    <div className="grid items-end gap-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,.7fr)] md:gap-10">
+      <div>
+        {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
+        <h2 className="font-display mt-3 text-[clamp(28px,3.4vw,42px)] leading-[1.08] font-bold text-balance tracking-[-0.038em]">
+          {title}
+        </h2>
+      </div>
       {intro ? (
-        <p className="text-n500 max-w-[64ch] text-[15.5px]">{intro}</p>
+        <p className="max-w-[58ch] text-[15px] leading-[1.7] text-n500 md:justify-self-end">
+          {intro}
+        </p>
       ) : null}
     </div>
   );
@@ -107,14 +111,21 @@ export function ClosingCta({
   body?: React.ReactNode;
 }) {
   return (
-    <section className="mt-[clamp(36px,6vw,64px)]">
+    <section className="mt-[clamp(44px,7vw,78px)]">
       <div className="wrap">
-        <div className="border-n200 flex flex-wrap items-center justify-between gap-5 rounded-2xl border bg-[linear-gradient(120deg,#fff,#F0F6FF)] p-[clamp(28px,4vw,44px)]">
+        <div className="relative isolate flex flex-wrap items-center justify-between gap-7 overflow-hidden rounded-[28px] border border-blue-500/15 bg-[linear-gradient(120deg,#FFFFFF_10%,#F2F7FF_58%,#ECFFF6)] p-[clamp(30px,5vw,54px)] shadow-[0_20px_55px_rgb(1_39_86_/_0.08)]">
+          <div
+            aria-hidden="true"
+            className="absolute -top-20 -right-14 -z-10 size-64 rounded-full border-[42px] border-blue-500/5"
+          />
           <div>
-            <h2 className="font-display text-[clamp(22px,3vw,32px)] font-bold tracking-[-0.025em]">
+            <Eyebrow>Built around your business</Eyebrow>
+            <h2 className="font-display mt-3 text-[clamp(25px,3vw,36px)] font-bold tracking-[-0.035em]">
               {title}
             </h2>
-            <p className="text-n500 mt-1.5 max-w-[52ch] text-[15px]">{body}</p>
+            <p className="mt-2 max-w-[56ch] text-[15px] leading-[1.65] text-n500">
+              {body}
+            </p>
           </div>
           <CtaRow
             ctas={[

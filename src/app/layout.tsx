@@ -39,6 +39,18 @@ export const metadata: Metadata = {
     siteName: "Fingrid.ai",
     type: "website",
     locale: "en_IN",
+    images: [
+      {
+        url: "/og.png",
+        width: 1734,
+        height: 907,
+        alt: "Fingrid.ai — the operating fabric for India's lending ecosystem",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/og.png"],
   },
 };
 

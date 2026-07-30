@@ -60,7 +60,7 @@ export default function ModulesLmsBcCoLendingOperationsPage() {
       <Related
         links={[
           ["Co-lending solution", "/solutions/co-lending"],
-          ["BcOS", "/products/bcos"],
+          ["Bc OS", "/products/bcos"],
           ["FLDG Management", "/modules/lms/fldg-management"],
         ]}
       />

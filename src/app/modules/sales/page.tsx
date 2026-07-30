@@ -88,7 +88,7 @@ export default function ModulesSalesPage() {
         links={[
           ["Marketing", "/modules/marketing"],
           ["Loan Origination", "/modules/origination"],
-          ["DsaOS", "/products/dsaos"],
+          ["Dsa OS", "/products/dsaos"],
         ]}
       />
       <ClosingCta />

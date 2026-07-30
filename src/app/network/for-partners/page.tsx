@@ -38,7 +38,7 @@ export default function NetworkForPartnersPage() {
             variant: "primary",
           },
           {
-            label: "DsaOS for your business",
+            label: "Dsa OS for your business",
             href: "/products/dsaos",
             variant: "ghost",
           },
@@ -98,12 +98,12 @@ export default function NetworkForPartnersPage() {
         eyebrow="Run the business too"
         title="The network is better with an OS behind it"
         ctas={[
-          { label: "DsaOS", href: "/products/dsaos", variant: "mint" },
-          { label: "LspOS", href: "/products/lspos", variant: "ghost" },
-          { label: "BcOS", href: "/products/bcos", variant: "ghost" },
+          { label: "Dsa OS", href: "/products/dsaos", variant: "mint" },
+          { label: "Lsp OS", href: "/products/lspos", variant: "ghost" },
+          { label: "Bc OS", href: "/products/bcos", variant: "ghost" },
         ]}
       >
-        Partners on DsaOS, LspOS or BcOS get the network natively — files,
+        Partners on Dsa OS, Lsp OS or Bc OS get the network natively — files,
         statuses and payouts flowing between your system and your lenders'
         without re-keying.
       </Band>

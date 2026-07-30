@@ -64,7 +64,7 @@ export default function SolutionsCoLendingPage() {
             "/modules/lms/bc-co-lending-operations",
           ],
           ["FLDG Management", "/modules/lms/fldg-management"],
-          ["BcOS", "/products/bcos"],
+          ["Bc OS", "/products/bcos"],
         ]}
       />
       <ClosingCta />

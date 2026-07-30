@@ -19,16 +19,16 @@ export function Panel({
       className="scroll-mt-24 pt-1.5 pb-[clamp(30px,4.6vw,52px)]"
     >
       <div className="wrap">
-        <div className="border-n200 rounded-xl border bg-white p-[clamp(22px,3vw,32px)]">
+        <div className="rounded-[22px] border border-n200/90 bg-white p-[clamp(24px,3.5vw,38px)] shadow-[0_8px_30px_rgb(1_39_86_/_0.045)]">
           {note ? (
             <div className="text-n400 font-mono text-[11px] tracking-[0.1em] uppercase">
               {note}
             </div>
           ) : null}
-          <h3 className="font-display mb-2 text-[21px] font-semibold tracking-[-0.015em]">
+          <h3 className="font-display mb-2 text-[23px] font-semibold tracking-[-0.025em]">
             {title}
           </h3>
-          <div className="[&>p]:text-n500 [&>p]:mb-1.5 [&>p]:max-w-[76ch] [&>p]:text-[14.5px]">
+          <div className="[&>p]:mb-1.5 [&>p]:max-w-[76ch] [&>p]:text-[15px] [&>p]:leading-[1.7] [&>p]:text-n500">
             {children}
           </div>
         </div>

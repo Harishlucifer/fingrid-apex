@@ -11,25 +11,25 @@ import {
 } from "@/components/site";
 
 export const metadata: Metadata = {
-  title: "VerifyOS",
+  title: "Verify OS",
   description:
-    "VerifyOS runs verification operations end to end — for the agencies that perform FI, PD and document checks across lenders, and for lender verification des",
+    "Verify OS runs verification operations end to end — for the agencies that perform FI, PD and document checks across lenders, and for lender verification des",
   alternates: { canonical: "/products/verifyos" },
 };
 
 export default function ProductsVerifyosPage() {
   return (
     <>
-      <Crumbs items={[["Products", "/products"], ["VerifyOS"]]} />
+      <Crumbs items={[["Products", "/products"], ["Verify OS"]]} />
       <Hero
         pill="For verification agencies · Lender verification desks"
-        eyebrow="VerifyOS"
+        eyebrow="Verify OS"
         title={
           <>
             Verification as an <Grad>operating business.</Grad>
           </>
         }
-        lede="VerifyOS runs verification operations end to end — for the agencies that perform FI, PD and document checks across lenders, and for lender verification desks managing them. Work orders in, geo-evidenced reports out, TATs and billing accounted for."
+        lede="Verify OS runs verification operations end to end — for the agencies that perform FI, PD and document checks across lenders, and for lender verification desks managing them. Work orders in, geo-evidenced reports out, TATs and billing accounted for."
         ctas={[
           {
             label: "Book a demo",
@@ -84,9 +84,9 @@ export default function ProductsVerifyosPage() {
       </CardsSection>
       <Panel title="One engine, both sides of the desk">
         <p>
-          VerifyOS runs on the same verification engine as the Verification
-          module inside LenderOS — so a lender on Fingrid and an agency on
-          VerifyOS exchange work orders and reports natively, without email
+          Verify OS runs on the same verification engine as the Verification
+          module inside Lender OS — so a lender on Fingrid and an agency on
+          Verify OS exchange work orders and reports natively, without email
           attachments.
         </p>
       </Panel>
@@ -99,7 +99,7 @@ export default function ProductsVerifyosPage() {
       />
       <ClosingCta
         title="Run your verification business on rails."
-        body="See VerifyOS configured for your lender panel and field force."
+        body="See Verify OS configured for your lender panel and field force."
       />
     </>
   );

@@ -55,7 +55,7 @@ export default function ModulesSalesBcChannelSalesPage() {
       </CardsSection>
       <Related
         links={[
-          ["BcOS", "/products/bcos"],
+          ["Bc OS", "/products/bcos"],
           [
             "BC & Co-lending Operations",
             "/modules/lms/bc-co-lending-operations",

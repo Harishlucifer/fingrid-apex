@@ -13,7 +13,7 @@ import {
 } from "@/components/site";
 
 export const metadata: Metadata = {
-  title: "LenderOS",
+  title: "Lender OS",
   description:
     "Every stack a lender needs — marketing to collections to the general ledger to the RBI return — in one multi-entity, multi-branch, multi-product system. Re",
   alternates: { canonical: "/products/lenderos" },
@@ -22,10 +22,10 @@ export const metadata: Metadata = {
 export default function ProductsLenderosPage() {
   return (
     <>
-      <Crumbs items={[["Products", "/products"], ["LenderOS"]]} />
+      <Crumbs items={[["Products", "/products"], ["Lender OS"]]} />
       <Hero
         pill="For NBFCs · Banks · HFCs"
-        eyebrow="LenderOS"
+        eyebrow="Lender OS"
         title={
           <>
             The complete operating system for <Grad>regulated lenders.</Grad>
@@ -92,7 +92,7 @@ export default function ProductsLenderosPage() {
       </CardsSection>
       <Panel title="Built for how NBFCs are actually examined">
         <p>
-          LenderOS treats compliance as an output of clean operations, not a
+          Lender OS treats compliance as an output of clean operations, not a
           quarterly scramble.
         </p>
         <Bullets>
@@ -148,7 +148,7 @@ export default function ProductsLenderosPage() {
       />
       <ClosingCta
         title="Run your book on one system of record."
-        body="We'll configure a working LenderOS demo on your products and hierarchy."
+        body="We'll configure a working Lender OS demo on your products and hierarchy."
       />
     </>
   );

@@ -12,25 +12,25 @@ import {
 } from "@/components/site";
 
 export const metadata: Metadata = {
-  title: "BcOS",
+  title: "Bc OS",
   description:
-    "BcOS mirrors the full LenderOS operating stack for business correspondents — sourcing, servicing, collections and accounting — minus the lender-only treasu",
+    "Bc OS mirrors the full Lender OS operating stack for business correspondents — sourcing, servicing, collections and accounting — minus the lender-only treasu",
   alternates: { canonical: "/products/bcos" },
 };
 
 export default function ProductsBcosPage() {
   return (
     <>
-      <Crumbs items={[["Products", "/products"], ["BcOS"]]} />
+      <Crumbs items={[["Products", "/products"], ["Bc OS"]]} />
       <Hero
         pill="For business correspondents"
-        eyebrow="BcOS"
+        eyebrow="Bc OS"
         title={
           <>
             Run BC operations like a <Grad>first-class lender.</Grad>
           </>
         }
-        lede="BcOS mirrors the full LenderOS operating stack for business correspondents — sourcing, servicing, collections and accounting — minus the lender-only treasury layers you don't carry. Your partner banks see clean files; you see your whole business."
+        lede="Bc OS mirrors the full Lender OS operating stack for business correspondents — sourcing, servicing, collections and accounting — minus the lender-only treasury layers you don't carry. Your partner banks see clean files; you see your whole business."
         ctas={[
           {
             label: "Book a demo",
@@ -84,7 +84,7 @@ export default function ProductsBcosPage() {
       </CardsSection>
       <Panel title="Why BCs outgrow spreadsheets and bank portals">
         <p>
-          A BC business runs on two ledgers: the bank's and yours. BcOS keeps
+          A BC business runs on two ledgers: the bank's and yours. Bc OS keeps
           yours complete.
         </p>
         <Bullets>
@@ -108,14 +108,14 @@ export default function ProductsBcosPage() {
       </Panel>
       <Related
         links={[
-          ["LspOS", "/products/lspos"],
+          ["Lsp OS", "/products/lspos"],
           ["Co-lending solution", "/solutions/co-lending"],
           ["Fingrid Connect", "/network/connect"],
         ]}
       />
       <ClosingCta
         title="Give your partner banks a reason to send more volume."
-        body="See BcOS configured for your corridors and commission structures."
+        body="See Bc OS configured for your corridors and commission structures."
       />
     </>
   );

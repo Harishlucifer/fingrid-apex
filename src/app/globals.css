@@ -36,7 +36,7 @@
   --color-n300: #c4cbd8;
   --color-n200: #e3e7ef;
   --color-n100: #eef1f6;
-  --color-n50: #f6f8fc;
+  --color-n50: #f8faff;
 
   /* ---------- footer / dark-band inks ---------- */
   --color-band-body: #a9bad8;
@@ -101,7 +101,7 @@
 :root {
   --radius: 12px;
 
-  --background: #f6f8fc;
+  --background: #f8faff;
   --foreground: #012756;
   --card: #ffffff;
   --card-foreground: #012756;
@@ -134,19 +134,7 @@
 
   body {
     @apply text-navy-900 antialiased;
-    background:
-      radial-gradient(
-        1200px 520px at 86% -10%,
-        rgb(49 133 255 / 0.07),
-        transparent 60%
-      ),
-      radial-gradient(
-        900px 460px at 6% 2%,
-        rgb(50 234 148 / 0.09),
-        transparent 55%
-      ),
-      var(--color-n50);
-    background-attachment: fixed;
+    background: var(--color-n50);
     font-size: 16px;
     line-height: 1.55;
   }

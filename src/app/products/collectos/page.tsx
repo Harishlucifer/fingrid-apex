@@ -11,25 +11,25 @@ import {
 } from "@/components/site";
 
 export const metadata: Metadata = {
-  title: "CollectOS",
+  title: "Collect OS",
   description:
-    "CollectOS gives collection agencies the same machinery lenders have — case allocation, tele and field workflows, PTPs, DCRs, deposit reconciliation and per",
+    "Collect OS gives collection agencies the same machinery lenders have — case allocation, tele and field workflows, PTPs, DCRs, deposit reconciliation and per",
   alternates: { canonical: "/products/collectos" },
 };
 
 export default function ProductsCollectosPage() {
   return (
     <>
-      <Crumbs items={[["Products", "/products"], ["CollectOS"]]} />
+      <Crumbs items={[["Products", "/products"], ["Collect OS"]]} />
       <Hero
         pill="For collection agencies"
-        eyebrow="CollectOS"
+        eyebrow="Collect OS"
         title={
           <>
             The operating system for <Grad>collection agencies.</Grad>
           </>
         }
-        lede="CollectOS gives collection agencies the same machinery lenders have — case allocation, tele and field workflows, PTPs, DCRs, deposit reconciliation and per-lender billing — with the conduct discipline that keeps principal relationships healthy."
+        lede="Collect OS gives collection agencies the same machinery lenders have — case allocation, tele and field workflows, PTPs, DCRs, deposit reconciliation and per-lender billing — with the conduct discipline that keeps principal relationships healthy."
         ctas={[
           {
             label: "Book a demo",
@@ -103,7 +103,7 @@ export default function ProductsCollectosPage() {
       />
       <ClosingCta
         title="Give your principals a reason to allocate more."
-        body="See CollectOS on your buckets, geographies and principal agreements."
+        body="See Collect OS on your buckets, geographies and principal agreements."
       />
     </>
   );

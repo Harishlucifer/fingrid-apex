@@ -57,7 +57,7 @@ export function DeploymentTable() {
           title="Choose your deployment model"
           intro="Your licence has two dimensions: which OS you run, and how it's deployed. All five models run the same platform with the same upgrade path — you're choosing isolation, control and commercial shape, never features."
         />
-        <div className="border-n200 mt-5 overflow-x-auto rounded-[14px] border bg-white">
+        <div className="mt-8 overflow-x-auto rounded-[22px] border border-n200 bg-white shadow-[0_10px_36px_rgb(1_39_86_/_0.055)]">
           <Table className="text-sm">
             <TableHeader>
               <TableRow className="bg-n50 hover:bg-n50">

@@ -30,22 +30,25 @@ export const NAV: NavItem[] = [
     links: [
       {
         heading: "Operating systems",
-        label: "LenderOS — for NBFCs & lenders",
+        label: "Lender OS — for NBFCs & lenders",
         href: "/products/lenderos",
       },
-      { label: "BcOS — for business correspondents", href: "/products/bcos" },
-      { label: "LspOS — for loan service providers", href: "/products/lspos" },
-      { label: "DsaOS — for DSAs", href: "/products/dsaos" },
+      { label: "Bc OS — for business correspondents", href: "/products/bcos" },
+      { label: "Lsp OS — for loan service providers", href: "/products/lspos" },
+      { label: "Dsa OS — for DSAs", href: "/products/dsaos" },
       {
         heading: "Specialised OS",
-        label: "VerifyOS — verification operations",
+        label: "Verify OS — verification operations",
         href: "/products/verifyos",
       },
       {
-        label: "ValuationOS — valuation operations",
+        label: "Valuation OS — valuation operations",
         href: "/products/valuationos",
       },
-      { label: "CollectOS — collection agencies", href: "/products/collectos" },
+      {
+        label: "Collect OS — collection agencies",
+        href: "/products/collectos",
+      },
       {
         heading: "Portals & apps",
         label: "DSA Portal",
@@ -53,7 +56,6 @@ export const NAV: NavItem[] = [
       },
       { label: "Customer Portal", href: "/products/portals/customer-portal" },
       { label: "Customer Mobile App", href: "/products/portals/customer-app" },
-      { label: "All products →", href: "/products" },
     ],
   },
   {
@@ -254,18 +256,18 @@ export const FOOTER: { heading: string; links: NavLink[] }[] = [
   {
     heading: "Products",
     links: [
-      { label: "LenderOS", href: "/products/lenderos" },
-      { label: "BcOS", href: "/products/bcos" },
-      { label: "LspOS", href: "/products/lspos" },
-      { label: "DsaOS", href: "/products/dsaos" },
-      { label: "VerifyOS", href: "/products/verifyos" },
-      { label: "ValuationOS", href: "/products/valuationos" },
-      { label: "CollectOS", href: "/products/collectos" },
+      { label: "Lender OS", href: "/products/lenderos" },
+      { label: "Bc OS", href: "/products/bcos" },
+      { label: "Lsp OS", href: "/products/lspos" },
+      { label: "Dsa OS", href: "/products/dsaos" },
+      { label: "Verify OS", href: "/products/verifyos" },
+      { label: "Valuation OS", href: "/products/valuationos" },
+      { label: "Collect OS", href: "/products/collectos" },
       { label: "Portals & Apps", href: "/products/portals" },
     ],
   },
   {
-    heading: "Modules",
+    heading: "Capabilities",
     links: [
       { label: "Loan Origination", href: "/modules/origination" },
       { label: "Loan Management", href: "/modules/lms" },
@@ -275,15 +277,13 @@ export const FOOTER: { heading: string; links: NavLink[] }[] = [
     ],
   },
   {
-    heading: "Network",
+    heading: "Ecosystem",
     links: [
       { label: "Fingrid Connect", href: "/network/connect" },
       { label: "Fingrid OneKey", href: "/network/onekey" },
       { label: "For Lenders", href: "/network/for-lenders" },
       { label: "For Partners", href: "/network/for-partners" },
       { label: "Solutions", href: "/solutions" },
-      { label: "Platform", href: "/platform" },
-      { label: "AI at Fingrid", href: "/ai" },
     ],
   },
   {
@@ -291,7 +291,8 @@ export const FOOTER: { heading: string; links: NavLink[] }[] = [
     links: [
       { label: "About Inforvio", href: "/company" },
       { label: "Resources", href: "/resources" },
-      { label: "Pricing", href: "/pricing" },
+      { label: "Platform", href: "/platform" },
+      { label: "AI at Fingrid", href: "/ai" },
       { label: "Fellowship", href: "/resources#fellowship" },
     ],
   },

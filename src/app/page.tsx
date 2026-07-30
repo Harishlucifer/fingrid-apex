@@ -55,35 +55,35 @@ export default function HomePage() {
         title="An OS for every seat at the lending table"
         intro="The same platform, composed differently for each participant in India's lending ecosystem — with one shared identity layer underneath."
       >
-        <Card href="/products/lenderos" title="LenderOS" tag="FOR LENDERS">
+        <Card href="/products/lenderos" title="Lender OS" tag="FOR LENDERS">
           The complete stack for NBFCs and banks — origination, LMS,
           collections, GL accounting, HR and regulatory analytics in one system.
         </Card>
-        <Card href="/products/bcos" title="BcOS" tag="FOR BCs">
+        <Card href="/products/bcos" title="Bc OS" tag="FOR BCs">
           Business correspondent operations end to end: sourcing, servicing, BC
           receivables and co-lending settlement with partner banks.
         </Card>
-        <Card href="/products/lspos" title="LspOS" tag="FOR LSPs">
+        <Card href="/products/lspos" title="Lsp OS" tag="FOR LSPs">
           Run a compliant loan service provider operation — multi-lender
           distribution with the RBI digital-lending guardrails built in.
         </Card>
-        <Card href="/products/dsaos" title="DsaOS" tag="FOR DSAs">
+        <Card href="/products/dsaos" title="Dsa OS" tag="FOR DSAs">
           A real operating system for DSA businesses — leads, files, lender
           submissions, payouts and team management in one login.
         </Card>
-        <Card href="/products/verifyos" title="VerifyOS" tag="FOR VERIFIERS">
+        <Card href="/products/verifyos" title="Verify OS" tag="FOR VERIFIERS">
           Verification operations for FI-PD and document-check agencies — work
           orders, geo evidence, TATs and billing.
         </Card>
         <Card
           href="/products/valuationos"
-          title="ValuationOS"
+          title="Valuation OS"
           tag="FOR VALUERS"
         >
           Property and vehicle valuation operations — inspections, asset
           templates and lender-ready reports.
         </Card>
-        <Card href="/products/collectos" title="CollectOS" tag="FOR AGENCIES">
+        <Card href="/products/collectos" title="Collect OS" tag="FOR AGENCIES">
           Collection agency operations — allocation, tele and field workflows,
           DCRs and per-principal billing.
         </Card>

@@ -20,7 +20,8 @@ const buttonVariants = cva(
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",
         // ---- Fingrid Design System call-to-action variants ----
-        fgPrimary: "bg-navy-900 text-white hover:bg-navy-800",
+        fgPrimary:
+          "bg-navy-900 text-white shadow-[0_9px_24px_rgb(1_39_86_/_0.18)] hover:-translate-y-0.5 hover:bg-navy-800 hover:shadow-[0_12px_30px_rgb(1_39_86_/_0.23)]",
         fgBlue: "bg-blue-500 text-white hover:bg-blue-600",
         fgMint:
           "bg-mint font-bold text-navy-900 shadow-[0_8px_24px_rgb(50_234_148_/_0.35)] hover:brightness-95",
@@ -40,7 +41,7 @@ const buttonVariants = cva(
           "size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
         "icon-lg": "size-9",
         /** Marketing call-to-action scale from the Fingrid Design System. */
-        cta: "h-auto gap-2 rounded-[10px] px-[22px] py-[13px] text-[15px] font-semibold",
+        cta: "h-auto gap-2 rounded-xl px-[22px] py-[13px] text-[15px] font-semibold",
       },
     },
     defaultVariants: {

@@ -70,7 +70,7 @@ export default function ProductsPortalsDsaPortalPage() {
             "Partner Management & Payouts",
             "/modules/sales/partner-management-payouts",
           ],
-          ["DsaOS", "/products/dsaos"],
+          ["Dsa OS", "/products/dsaos"],
         ]}
       />
       <ClosingCta />

@@ -97,8 +97,8 @@ export default function NetworkConnectPage() {
         <Bullets alt>
           <li>
             One canonical record per company — a DSA on Connect, a channel
-            partner in a LenderOS tenant, a billing customer in Inforvio ERP are
-            relationships linked to the same record, never duplicates
+            partner in a Lender OS tenant, a billing customer in Inforvio ERP
+            are relationships linked to the same record, never duplicates
           </li>
           <li>
             KYC and profile data verified once, referenced everywhere with the
@@ -129,8 +129,8 @@ export default function NetworkConnectPage() {
         links={[
           ["Connect for lenders", "/network/for-lenders"],
           ["Connect for partners", "/network/for-partners"],
-          ["DsaOS", "/products/dsaos"],
-          ["LenderOS", "/products/lenderos"],
+          ["Dsa OS", "/products/dsaos"],
+          ["Lender OS", "/products/lenderos"],
         ]}
       />
       <ClosingCta

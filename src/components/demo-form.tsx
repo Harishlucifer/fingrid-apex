@@ -81,12 +81,16 @@ export function DemoForm() {
       className="scroll-mt-24 pt-1.5 pb-[clamp(30px,4.6vw,52px)]"
     >
       <div className="wrap">
-        <div className="border-n200 grid gap-6 rounded-xl border bg-white p-[clamp(22px,3vw,32px)] lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-10">
+        <div className="grid gap-8 rounded-[26px] border border-n200 bg-white p-[clamp(26px,4vw,46px)] shadow-[0_16px_48px_rgb(1_39_86_/_0.07)] lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-14">
           <div>
-            <h3 className="font-display mb-2 text-[21px] font-semibold tracking-[-0.015em]">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-success-bg px-3 py-1.5 text-[10.5px] font-semibold text-success-ink">
+              <span className="size-1.5 rounded-full bg-success" />
+              Tailored working session
+            </div>
+            <h3 className="font-display mb-2 text-[27px] font-semibold tracking-[-0.03em]">
               Book a demo
             </h3>
-            <p className="text-n500 text-[14.5px]">
+            <p className="text-[14.5px] leading-[1.7] text-n500">
               Tell us who you are — lender, BC, LSP or DSA — and what you lend.
               We'll come back with a working demo on your products and a
               commercial proposal, not a rate card that answers nothing.
@@ -116,7 +120,7 @@ export function DemoForm() {
           <form
             noValidate
             onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
-            className="grid gap-4"
+            className="grid gap-4 rounded-[20px] border border-n200/80 bg-n50/70 p-[clamp(18px,3vw,28px)]"
           >
             <div className="grid gap-4 sm:grid-cols-2">
               <div>

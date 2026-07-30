@@ -68,7 +68,7 @@ export default function ModulesFinanceNbfcComplianceSuitePage() {
         links={[
           ["Accounting & GL", "/modules/finance/accounting-gl"],
           ["NPA & DPD", "/modules/lms/npa-dpd-management"],
-          ["LenderOS", "/products/lenderos"],
+          ["Lender OS", "/products/lenderos"],
         ]}
       />
       <ClosingCta />

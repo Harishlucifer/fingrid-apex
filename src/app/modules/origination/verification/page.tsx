@@ -62,16 +62,16 @@ export default function ModulesOriginationVerificationPage() {
           attached.
         </Card>
       </CardsSection>
-      <Panel title="The same engine powers VerifyOS">
+      <Panel title="The same engine powers Verify OS">
         <p>
-          Verification agencies run their whole operation on VerifyOS — the same
-          verification engine, agency-side. When your verification partners are
-          on it, work orders and reports flow system-to-system.
+          Verification agencies run their whole operation on Verify OS — the
+          same verification engine, agency-side. When your verification partners
+          are on it, work orders and reports flow system-to-system.
         </p>
       </Panel>
       <Related
         links={[
-          ["VerifyOS", "/products/verifyos"],
+          ["Verify OS", "/products/verifyos"],
           ["Field Credit / FI-PD", "/modules/origination/field-credit-fi-pd"],
           ["Integrations", "/platform/integrations"],
         ]}

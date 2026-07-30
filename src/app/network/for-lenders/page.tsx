@@ -72,7 +72,7 @@ export default function NetworkForLendersPage() {
           sees what, and nothing you publish binds you to empanel anyone.
         </Card>
         <Card title="Empanel into your OS">
-          Accepted partners flow into LenderOS as channel partners — same
+          Accepted partners flow into Lender OS as channel partners — same
           canonical identity, agreements and payout grids attached, no
           re-onboarding.
         </Card>
@@ -107,7 +107,7 @@ export default function NetworkForLendersPage() {
       </Band>
       <Related
         links={[
-          ["LenderOS", "/products/lenderos"],
+          ["Lender OS", "/products/lenderos"],
           ["DSA Channel Sales", "/modules/sales/dsa-channel-sales"],
           [
             "Partner Management & Payouts",

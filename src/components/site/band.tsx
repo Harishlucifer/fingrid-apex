@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CtaRow, Eyebrow } from "./cta";
 import type { Cta, LinkTuple, StatTuple } from "./types";
 
-/** Full-bleed navy section with a mint/blue radial wash. */
+/** Full-bleed feature section with a light mint/blue radial wash. */
 export function Band({
   eyebrow,
   title,
@@ -18,26 +18,36 @@ export function Band({
   children: React.ReactNode;
 }) {
   return (
-    <section className="bg-navy-900 relative mt-6 overflow-hidden">
+    <section className="relative overflow-hidden border-y border-blue-500/10 bg-[linear-gradient(115deg,#F4F8FF,#F3FFF9)]">
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-[radial-gradient(700px_380px_at_82%_8%,rgb(50_234_148_/_0.14),transparent_60%),radial-gradient(680px_400px_at_6%_100%,rgb(49_133_255_/_0.22),transparent_55%)]"
+        className="absolute inset-y-0 left-1/2 w-full max-w-[1440px] -translate-x-1/2 bg-[radial-gradient(700px_380px_at_82%_8%,rgb(50_234_148_/_0.16),transparent_60%),radial-gradient(680px_400px_at_8%_100%,rgb(49_133_255_/_0.12),transparent_55%)]"
       />
-      <div className="wrap relative py-[clamp(44px,6vw,72px)]">
-        {eyebrow ? <Eyebrow className="text-mint">{eyebrow}</Eyebrow> : null}
-        <h2 className="font-display mt-3 mb-2 text-[clamp(27px,3.8vw,44px)] leading-[1.1] font-bold tracking-[-0.028em] text-white">
-          {title}
-        </h2>
-        <p className="text-band-body max-w-[60ch] text-base">{children}</p>
-        <CtaRow ctas={ctas} className="mt-6" />
+      <div className="wrap relative grid items-center gap-10 py-[clamp(52px,7vw,84px)] lg:grid-cols-[1fr_.7fr]">
+        <div>
+          {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
+          <h2 className="font-display text-navy-900 mt-3 text-[clamp(30px,4vw,48px)] leading-[1.08] font-bold tracking-[-0.04em] text-balance">
+            {title}
+          </h2>
+          <p className="text-n500 mt-4 max-w-[62ch] text-[16px] leading-[1.7]">
+            {children}
+          </p>
+          <CtaRow ctas={ctas} className="mt-7" />
+        </div>
         {mini?.length ? (
-          <dl className="mt-8 flex flex-wrap gap-x-[26px] gap-y-4">
-            {mini.map(([num, label]) => (
-              <div key={label}>
-                <dt className="font-mono text-[22px] font-semibold text-white">
+          <dl className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            {mini.map(([num, label], index) => (
+              <div
+                key={label}
+                className="flex items-center gap-4 rounded-2xl border border-white bg-white/75 p-4 shadow-[0_10px_30px_rgb(1_39_86_/_0.06)] backdrop-blur-sm"
+              >
+                <dt className="bg-navy-900 font-display grid size-11 shrink-0 place-items-center rounded-xl text-[19px] font-bold text-white">
                   {num}
                 </dt>
-                <dd className="text-band-muted text-[12.5px]">{label}</dd>
+                <dd className="text-n700 text-[13px] font-medium">{label}</dd>
+                <span className="text-n300 ml-auto font-mono text-[10px]">
+                  0{index + 1}
+                </span>
               </div>
             ))}
           </dl>

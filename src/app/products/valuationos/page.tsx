@@ -11,25 +11,25 @@ import {
 } from "@/components/site";
 
 export const metadata: Metadata = {
-  title: "ValuationOS",
+  title: "Valuation OS",
   description:
-    "ValuationOS runs property and vehicle valuation operations — work orders from empanelled lenders, field inspections with photographic evidence, asset-type ",
+    "Valuation OS runs property and vehicle valuation operations — work orders from empanelled lenders, field inspections with photographic evidence, asset-type ",
   alternates: { canonical: "/products/valuationos" },
 };
 
 export default function ProductsValuationosPage() {
   return (
     <>
-      <Crumbs items={[["Products", "/products"], ["ValuationOS"]]} />
+      <Crumbs items={[["Products", "/products"], ["Valuation OS"]]} />
       <Hero
         pill="For valuation agencies · Technical desks"
-        eyebrow="ValuationOS"
+        eyebrow="Valuation OS"
         title={
           <>
             Valuations that lenders can <Grad>lend against.</Grad>
           </>
         }
-        lede="ValuationOS runs property and vehicle valuation operations — work orders from empanelled lenders, field inspections with photographic evidence, asset-type templates and reports that arrive in the format each lender's credit team expects."
+        lede="Valuation OS runs property and vehicle valuation operations — work orders from empanelled lenders, field inspections with photographic evidence, asset-type templates and reports that arrive in the format each lender's credit team expects."
         ctas={[
           {
             label: "Book a demo",
@@ -91,12 +91,12 @@ export default function ProductsValuationosPage() {
         links={[
           ["Home Loan solution", "/solutions/home-loan"],
           ["Used Car solution", "/solutions/used-car"],
-          ["VerifyOS", "/products/verifyos"],
+          ["Verify OS", "/products/verifyos"],
         ]}
       />
       <ClosingCta
         title="Put your valuation practice on the platform."
-        body="See ValuationOS on your asset classes and lender panel."
+        body="See Valuation OS on your asset classes and lender panel."
       />
     </>
   );

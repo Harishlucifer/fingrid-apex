@@ -110,7 +110,7 @@ export default function NetworkOnekeyPage() {
       <Related
         links={[
           ["Fingrid Connect", "/network/connect"],
-          ["LspOS", "/products/lspos"],
+          ["Lsp OS", "/products/lspos"],
           ["Integrations", "/platform/integrations"],
         ]}
       />

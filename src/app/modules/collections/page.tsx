@@ -69,7 +69,7 @@ export default function ModulesCollectionsPage() {
       </Panel>
       <Related
         links={[
-          ["CollectOS — for agencies", "/products/collectos"],
+          ["Collect OS — for agencies", "/products/collectos"],
           ["Repayment Management", "/modules/lms/repayment-management"],
           ["NPA & DPD", "/modules/lms/npa-dpd-management"],
         ]}

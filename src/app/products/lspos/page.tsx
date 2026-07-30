@@ -12,26 +12,26 @@ import {
 } from "@/components/site";
 
 export const metadata: Metadata = {
-  title: "LspOS",
+  title: "Lsp OS",
   description:
-    "LspOS is the operating system for loan service providers under the RBI digital lending framework — run sourcing, servicing and collections across multiple ",
+    "Lsp OS is the operating system for loan service providers under the RBI digital lending framework — run sourcing, servicing and collections across multiple ",
   alternates: { canonical: "/products/lspos" },
 };
 
 export default function ProductsLsposPage() {
   return (
     <>
-      <Crumbs items={[["Products", "/products"], ["LspOS"]]} />
+      <Crumbs items={[["Products", "/products"], ["Lsp OS"]]} />
       <Hero
         pill="For loan service providers"
-        eyebrow="LspOS"
+        eyebrow="Lsp OS"
         title={
           <>
             Multi-lender distribution, with the{" "}
             <Grad>guardrails built in.</Grad>
           </>
         }
-        lede="LspOS is the operating system for loan service providers under the RBI digital lending framework — run sourcing, servicing and collections across multiple regulated entities with the disclosure, consent and data-handling discipline the guidelines demand."
+        lede="Lsp OS is the operating system for loan service providers under the RBI digital lending framework — run sourcing, servicing and collections across multiple regulated entities with the disclosure, consent and data-handling discipline the guidelines demand."
         ctas={[
           {
             label: "Book a demo",
@@ -105,13 +105,13 @@ export default function ProductsLsposPage() {
       <Related
         links={[
           ["Fingrid OneKey", "/network/onekey"],
-          ["DsaOS", "/products/dsaos"],
+          ["Dsa OS", "/products/dsaos"],
           ["Fingrid Connect", "/network/connect"],
         ]}
       />
       <ClosingCta
         title="Scale distribution without scaling regulatory risk."
-        body="See LspOS configured for your lender panel."
+        body="See Lsp OS configured for your lender panel."
       />
     </>
   );

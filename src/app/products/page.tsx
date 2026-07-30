@@ -44,19 +44,19 @@ export default function ProductsPage() {
         eyebrow="Operating systems"
         title="Pick your seat at the table"
       >
-        <Card href="/products/lenderos" title="LenderOS" tag="FOR LENDERS">
+        <Card href="/products/lenderos" title="Lender OS" tag="FOR LENDERS">
           Full-stack lending for NBFCs and banks — all eight module stacks, from
           campaign to GL to regulatory reporting.
         </Card>
-        <Card href="/products/bcos" title="BcOS" tag="FOR BCs">
+        <Card href="/products/bcos" title="Bc OS" tag="FOR BCs">
           Business correspondent operations — sourcing, servicing and settlement
           with partner banks, minus lender-only treasury overhead.
         </Card>
-        <Card href="/products/lspos" title="LspOS" tag="FOR LSPs">
+        <Card href="/products/lspos" title="Lsp OS" tag="FOR LSPs">
           Compliant multi-lender distribution for loan service providers under
           the RBI digital lending guidelines.
         </Card>
-        <Card href="/products/dsaos" title="DsaOS" tag="FOR DSAs">
+        <Card href="/products/dsaos" title="Dsa OS" tag="FOR DSAs">
           The operating system for DSA businesses — pipeline, submissions,
           payouts and team, in one login.
         </Card>
@@ -66,19 +66,19 @@ export default function ProductsPage() {
         title="For the businesses that serve lenders"
         intro="Verification, valuation and collection agencies run real operations too — and when they run on Fingrid, work orders and results flow system-to-system with the lenders they serve."
       >
-        <Card href="/products/verifyos" title="VerifyOS" tag="FOR VERIFIERS">
+        <Card href="/products/verifyos" title="Verify OS" tag="FOR VERIFIERS">
           FI-PD and document verification operations — work orders, field force,
           geo evidence and per-lender billing.
         </Card>
         <Card
           href="/products/valuationos"
-          title="ValuationOS"
+          title="Valuation OS"
           tag="FOR VALUERS"
         >
           Property and vehicle valuation — inspections, asset-type templates and
           lender-format reports.
         </Card>
-        <Card href="/products/collectos" title="CollectOS" tag="FOR AGENCIES">
+        <Card href="/products/collectos" title="Collect OS" tag="FOR AGENCIES">
           Collection agency operations — allocation, PTPs, DCRs, deposit
           reconciliation and principal-wise billing.
         </Card>
@@ -117,7 +117,7 @@ export default function ProductsPage() {
         ]}
       >
         Every company and user exists once on the Fingrid network. A DSA
-        onboarded on DsaOS appears in a lender's LenderOS tenant as a channel
+        onboarded on Dsa OS appears in a lender's Lender OS tenant as a channel
         partner — the same canonical record, never a copy.
       </Band>
       <ClosingCta />
