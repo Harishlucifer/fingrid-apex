@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { Providers } from "./providers";
-import { SiteFooter } from "@/components/site-footer";
-import { SiteNav } from "@/components/site-nav";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -66,9 +64,7 @@ export default function RootLayout({
     >
       <body className="flex min-h-full flex-col">
         <Providers>
-          <SiteNav />
-          <main className="flex-1">{children}</main>
-          <SiteFooter />
+          {children}
           <Toaster position="bottom-right" />
         </Providers>
       </body>
