@@ -1,6 +1,6 @@
 // Fingrid Connect — partner-facing API service seam. Every call maps 1:1 to a real alpha-api
 // endpoint. Envelope convention: success -> {status:1, data}; error -> {status:-1, error}.
-import { ALPHA_V1 as BASE, ALPHA_V2 as BASE_V2 } from "./api-config";
+import { ALPHA_V1 as BASE, ALPHA_V2 as BASE_V2, tenantHeaders } from "./api-config";
 
 const TOKEN_KEY = "connect_jwt";
 const REFRESH_TOKEN_KEY = "connect_refresh_jwt";
@@ -72,7 +72,7 @@ async function refreshAccessToken(): Promise<string> {
       if (!refreshToken) throw new Error("No refresh token available");
       const res = await fetch(`${BASE}/auth/refresh`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...tenantHeaders() },
         body: JSON.stringify({ refresh_token: refreshToken }),
       });
       const json: ApiEnvelope<{ access_token: string }> | null = await res
@@ -97,7 +97,7 @@ export async function logout({ redirect = true }: { redirect?: boolean } = {}) {
   try {
     await fetch(`${BASE_V2}/auth/logout`, {
       method: "GET",
-      headers: { ...authHeaders(), "X-Platform": "PARTNER_PORTAL" },
+      headers: { ...tenantHeaders(), ...authHeaders(), "X-Platform": "PARTNER_PORTAL" },
     });
   } catch {
     // best-effort — local logout below is what actually matters
@@ -118,7 +118,12 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   const { method = "GET", body, headers = {}, _retried = false } = options;
   const res = await fetch(`${BASE}${path}`, {
     method,
-    headers: { "Content-Type": "application/json", ...authHeaders(), ...headers },
+    headers: {
+      "Content-Type": "application/json",
+      ...tenantHeaders(),
+      ...authHeaders(),
+      ...headers,
+    },
     body: body ? JSON.stringify(body) : undefined,
   });
   const json: ApiEnvelope<T> | null = await res.json().catch(() => null);
@@ -147,7 +152,9 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 // Public endpoint — no session exists yet, so this is a plain fetch, not routed through
 // request()/authHeaders() (which would try to refresh a session that doesn't exist).
 export async function checkIdentity(email: string) {
-  const res = await fetch(`${BASE}/connect/identity?email=${encodeURIComponent(email)}`);
+  const res = await fetch(`${BASE}/connect/identity?email=${encodeURIComponent(email)}`, {
+    headers: tenantHeaders(),
+  });
   const json: ApiEnvelope<{
     domain: string;
     is_personal: boolean;
@@ -187,7 +194,7 @@ export async function searchCompanyMaster(
   { page = 1, size = 8 }: { page?: number; size?: number } = {},
 ) {
   const qs = new URLSearchParams({ keyword, page: String(page), size: String(size) }).toString();
-  const res = await fetch(`${BASE}/employer/?${qs}`);
+  const res = await fetch(`${BASE}/employer/?${qs}`, { headers: tenantHeaders() });
   const json: ApiEnvelope<unknown[]> | null = await res.json().catch(() => null);
   if (json?.status === -2) return []; // "data not found" — not a failure
   if (!res.ok || json?.status !== 1) {
@@ -204,7 +211,7 @@ let guestTokenInFlight: Promise<string> | null = null;
 async function fetchGuestToken(): Promise<string> {
   const res = await fetch(`${BASE}/auth/guest`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...tenantHeaders() },
     body: "{}",
   });
   const json: ApiEnvelope<{ user?: ConnectUser }> | null = await res.json().catch(() => null);
@@ -256,7 +263,12 @@ async function guestFetch(
   const token = await ensureGuestToken();
   const res = await fetch(`${BASE}${path}`, {
     method,
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, ...headers },
+    headers: {
+      "Content-Type": "application/json",
+      ...tenantHeaders(),
+      Authorization: `Bearer ${token}`,
+      ...headers,
+    },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   if (res.status === 401 && !_retried) {
@@ -418,7 +430,11 @@ export type SignInResult =
 async function authRequest(body: Record<string, unknown>) {
   const res = await fetch(`${BASE}/auth/login-with-otp`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "X-Platform": "PARTNER_PORTAL" },
+    headers: {
+      "Content-Type": "application/json",
+      ...tenantHeaders(),
+      "X-Platform": "PARTNER_PORTAL",
+    },
     body: JSON.stringify(body),
   });
   const json: (ApiEnvelope<{ user?: ConnectUser }> & { channel_id?: string | number }) | null =

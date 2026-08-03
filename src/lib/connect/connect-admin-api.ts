@@ -1,7 +1,7 @@
 // Fingrid Connect — internal admin API service seam (WF5). Separate identity from the
 // partner-facing connect-api.ts: an admin caller is a Fingrid EMPLOYEE user, not a
 // channel/partner, so the token is stored under its own localStorage key.
-import { ALPHA_V1 as BASE } from "./api-config";
+import { ALPHA_V1 as BASE, tenantHeaders } from "./api-config";
 
 const TOKEN_KEY = "connect_admin_token";
 
@@ -48,7 +48,12 @@ async function request<T>(
 ): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     method,
-    headers: { "Content-Type": "application/json", ...authHeaders(), ...headers },
+    headers: {
+      "Content-Type": "application/json",
+      ...tenantHeaders(),
+      ...authHeaders(),
+      ...headers,
+    },
     body: body ? JSON.stringify(body) : undefined,
   });
   const json: ApiEnvelope<T> | null = await res.json().catch(() => null);
@@ -67,7 +72,11 @@ async function request<T>(
 export async function adminLogin({ email, password }: { email: string; password: string }) {
   const res = await fetch(`${BASE}/auth/login-with-password`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "X-Platform": "EMPLOYEE_PORTAL" },
+    headers: {
+      "Content-Type": "application/json",
+      ...tenantHeaders(),
+      "X-Platform": "EMPLOYEE_PORTAL",
+    },
     body: JSON.stringify({ email, password }),
   });
   const json: ApiEnvelope<{ user?: { access_token?: string; [key: string]: unknown } }> | null =
