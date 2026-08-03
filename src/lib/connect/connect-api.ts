@@ -149,12 +149,13 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 }
 
 // ---- WF1 identity check (pre-registration) ----
-// Public endpoint — no session exists yet, so this is a plain fetch, not routed through
-// request()/authHeaders() (which would try to refresh a session that doesn't exist).
+// Pre-login, but NOT unauthenticated: cosmos-gateway rejects anything whose path is not in its
+// whitelist (configuration/whitelist.json) with {"error":"Missing auth token"} before it ever
+// proxies upstream, and /connect/identity is not on that list. So this rides the shared guest
+// session like the other pre-registration calls — it cannot use request()/authHeaders(), which
+// would try to refresh a real session that does not exist yet.
 export async function checkIdentity(email: string) {
-  const res = await fetch(`${BASE}/connect/identity?email=${encodeURIComponent(email)}`, {
-    headers: tenantHeaders(),
-  });
+  const res = await guestFetch(`/connect/identity?email=${encodeURIComponent(email)}`);
   const json: ApiEnvelope<{
     domain: string;
     is_personal: boolean;
@@ -189,12 +190,14 @@ export async function fetchLookupGroups(groupCodes: string[]): Promise<LookupRow
 
 // MCA company-REGISTER search only — never carries a channel_id/domain/entity_type. Used for
 // "my company isn't on Fingrid Connect yet, but it's a known/registered company".
+// Guest-session backed for the same reason as checkIdentity: /employer/ is not in the gateway's
+// whitelist, so a tokenless call is refused at the gateway with "Missing auth token".
 export async function searchCompanyMaster(
   keyword: string,
   { page = 1, size = 8 }: { page?: number; size?: number } = {},
 ) {
   const qs = new URLSearchParams({ keyword, page: String(page), size: String(size) }).toString();
-  const res = await fetch(`${BASE}/employer/?${qs}`, { headers: tenantHeaders() });
+  const res = await guestFetch(`/employer/?${qs}`);
   const json: ApiEnvelope<unknown[]> | null = await res.json().catch(() => null);
   if (json?.status === -2) return []; // "data not found" — not a failure
   if (!res.ok || json?.status !== 1) {
