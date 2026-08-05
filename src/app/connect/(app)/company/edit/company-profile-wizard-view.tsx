@@ -509,7 +509,7 @@ export function CompanyProfileWizardView() {
                       label: "₹ Cr / month",
                       type: "decimal" as const,
                       placeholder: "0",
-                      validate: (v: string) => V.firstError(v, [V.decimal("Amount"), V.min("Amount", 0)]),
+                      validate: (v: unknown) => V.firstError(v, [V.decimal("Amount"), V.min("Amount", 0)]),
                     },
                   ]}
                   rows={loanMix}
@@ -557,7 +557,7 @@ export function CompanyProfileWizardView() {
                       label: "Count",
                       type: "int" as const,
                       placeholder: "0",
-                      validate: (v: string) => V.integer("Count")(v),
+                      validate: (v: unknown) => V.integer("Count")(v),
                     },
                     { key: "locations", label: "Locations" },
                   ]}
@@ -582,7 +582,7 @@ export function CompanyProfileWizardView() {
                       type: "int" as const,
                       maxLength: 4,
                       placeholder: "2021",
-                      validate: (v: string) => V.year(v),
+                      validate: (v: unknown) => V.year(v),
                     },
                     { key: "reference_no", label: "Ref #" },
                   ]}

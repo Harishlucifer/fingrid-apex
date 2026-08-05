@@ -11,7 +11,7 @@ export interface DynamicTableColumn {
   type?: "text" | "int" | "decimal";
   maxLength?: number;
   /** Marks the cell red when the row is filled but this value is unusable. */
-  validate?: (value: string) => string | null;
+  validate?: (value: unknown) => string | null;
 }
 
 // Add/remove-row table for repeatable structured fields (branches, staff-by-role,
@@ -62,7 +62,8 @@ export function DynamicTable({
             {rows.map((row, i) => (
               <tr key={i}>
                 {columns.map((c) => {
-                  const raw = row[c.key] ?? "";
+                  // Rows can arrive from the API with real numbers in numeric columns.
+                  const raw = row[c.key] == null ? "" : String(row[c.key]);
                   const cellError = c.validate ? c.validate(raw) : null;
                   return (
                     <td key={c.key} className="p-1 align-top">

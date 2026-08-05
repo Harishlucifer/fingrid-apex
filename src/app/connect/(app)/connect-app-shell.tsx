@@ -19,9 +19,17 @@ import {
   Compass,
   ArrowRight,
   ChevronRight,
+  Menu as MenuIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LogoMark } from "@/components/brand/logo-mark";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { useConnectStore } from "@/stores/use-connect-store";
 import { useConnectTenantStore } from "@/stores/use-connect-tenant-store";
 import {
@@ -120,6 +128,7 @@ export function ConnectAppShell({ children }: { children: React.ReactNode }) {
   const tenant = useConnectTenantStore((s) => s.tenant);
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const [loggingOut, setLoggingOut] = useState(false);
   const [sessionOk, setSessionOk] = useState<boolean | null>(null);
@@ -233,6 +242,80 @@ export function ConnectAppShell({ children }: { children: React.ReactNode }) {
       {/* Sized to match SiteNav's lockup — 68px bar, 11px gap, 20px wordmark — so the app zone
           and the marketing site read as the same product. */}
       <header className="border-n200/80 sticky top-0 z-30 flex h-[68px] flex-shrink-0 items-center gap-3 border-b bg-white/92 px-4 shadow-[0_8px_30px_rgb(1_39_86_/_0.045)] backdrop-blur-[18px] sm:px-5">
+        {/* Below md the sidebar is hidden and the bottom bar only holds five tabs — without
+            this, Company profile and Requirements would be unreachable on a phone. */}
+        <Sheet open={navOpen} onOpenChange={setNavOpen}>
+          <SheetTrigger asChild>
+            <button
+              type="button"
+              aria-label="Open menu"
+              className="text-n700 hover:bg-n100 -ml-1 flex size-10 shrink-0 items-center justify-center rounded-xl transition-colors md:hidden"
+            >
+              <MenuIcon size={20} strokeWidth={2} />
+            </button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-[290px] p-0">
+            <SheetHeader className="border-n200 border-b px-4 py-4">
+              <SheetTitle className="flex items-center gap-2.5">
+                <LogoMark />
+                <span className="font-display text-navy-900 text-[17px] font-bold tracking-[-0.02em]">
+                  {brandName || (
+                    <>
+                      Fingrid<span className="text-blue-500">Connect</span>
+                    </>
+                  )}
+                </span>
+              </SheetTitle>
+            </SheetHeader>
+            <div className="grid gap-4 overflow-y-auto px-3 py-4">
+              {NAV_GROUPS.map((group) => (
+                <div key={group.heading}>
+                  <div className="text-n400 mb-1 px-2.5 font-mono text-[9.5px] font-semibold tracking-[0.14em] uppercase">
+                    {group.heading}
+                  </div>
+                  <div className="grid gap-0.5">
+                    {group.items.map((item) => {
+                      const active = isActive(pathname, item.href);
+                      const meta = item.key ? status[item.key] : undefined;
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setNavOpen(false)}
+                          aria-current={active ? "page" : undefined}
+                          className={cn(
+                            "flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-[14px] font-medium transition-colors",
+                            active
+                              ? "bg-blue-500/[.09] font-semibold text-blue-600"
+                              : "text-n700 hover:bg-n50",
+                          )}
+                        >
+                          <item.icon
+                            size={17}
+                            strokeWidth={2}
+                            className={active ? "text-blue-600" : "text-n400"}
+                          />
+                          <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                          {meta?.badge && (
+                            <span
+                              className={cn(
+                                "rounded-full px-1.5 py-[2px] text-[10px] font-bold",
+                                BADGE_TONE[meta.badge.tone],
+                              )}
+                            >
+                              {meta.badge.label}
+                            </span>
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </SheetContent>
+        </Sheet>
+
         <Link href="/connect/dashboard" className="flex shrink-0 items-center gap-[11px]">
           {brandLogo ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -384,17 +467,10 @@ export function ConnectAppShell({ children }: { children: React.ReactNode }) {
             </div>
           ))}
 
-          <div className="mt-auto">
-            <Link
-              href="/connect/requirements/new"
-              className="bg-navy-900 hover:bg-navy-800 flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-[12.5px] font-semibold text-white shadow-[0_9px_24px_rgb(1_39_86_/_0.18)] transition-colors"
-            >
-              Post a requirement
-              <ArrowRight size={13} strokeWidth={2.2} className="text-mint" />
-            </Link>
-            <div className="text-n400 mt-3 px-1 text-[10px]">
-              © {new Date().getFullYear()} {brandName || "Fingrid Connect"} · Powered by Fingrid.ai
-            </div>
+          {/* No CTA here — the menu is for navigation. "Post a requirement" lives on the
+              pages that own the action (dashboard header, requirements list). */}
+          <div className="text-n400 mt-auto px-1 text-[10px]">
+            © {new Date().getFullYear()} {brandName || "Fingrid Connect"} · Powered by Fingrid.ai
           </div>
         </nav>
 
