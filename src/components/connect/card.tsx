@@ -1,12 +1,17 @@
 import type { ComponentProps, ReactNode } from "react";
-import type { LucideIcon } from "lucide-react";
+import { AlertCircle, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export function Card({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
-      className={cn("rounded-xl border border-n200 bg-white p-5 shadow-sm", className)}
+      className={cn(
+        // Matches the marketing site's card treatment — soft ring + long shadow rather than a
+        // hard 1px border, so Connect reads as part of fingrid.ai.
+        "ring-navy-900/5 rounded-2xl border border-white bg-white p-5 shadow-[0_12px_34px_rgb(1_39_86_/_0.06)] ring-1",
+        className,
+      )}
       {...props}
     />
   );
@@ -85,8 +90,10 @@ export function PageHeader({
           </span>
         )}
         <div className="min-w-0">
-          <h1 className="text-2xl leading-tight font-extrabold text-navy-900">{title}</h1>
-          {subtitle && <div className="mt-0.5 text-sm text-n500">{subtitle}</div>}
+          <h1 className="font-display text-navy-900 text-[clamp(21px,2.4vw,26px)] leading-tight font-bold tracking-[-0.035em]">
+            {title}
+          </h1>
+          {subtitle && <div className="text-n500 mt-0.5 text-sm">{subtitle}</div>}
         </div>
       </div>
       {action && <div className="flex-shrink-0">{action}</div>}
@@ -148,19 +155,33 @@ export function InitialAvatar({
 export function Field({
   label,
   required,
+  error,
+  hint,
   children,
 }: {
   label: ReactNode;
   required?: boolean;
+  /** Validation message. Shown in place of `hint` and marks the field red. */
+  error?: string | null;
+  /** Static helper text — format expectations, units, why the field exists. */
+  hint?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <div className="mb-3 flex flex-col gap-1">
-      <label className="text-[11px] font-bold tracking-wide text-n700 uppercase">
+      <label className="text-n700 text-[11px] font-bold tracking-wide uppercase">
         {label}
         {required && <span className="text-danger"> *</span>}
       </label>
       {children}
+      {error ? (
+        <span role="alert" className="text-danger-ink flex items-center gap-1 text-[11px] font-medium">
+          <AlertCircle size={11} strokeWidth={2.5} className="shrink-0" />
+          {error}
+        </span>
+      ) : hint ? (
+        <span className="text-n400 text-[11px]">{hint}</span>
+      ) : null}
     </div>
   );
 }

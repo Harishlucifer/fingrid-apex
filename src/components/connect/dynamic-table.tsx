@@ -1,11 +1,17 @@
 import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { maskDecimal, maskDigits } from "@/lib/connect/validation";
 
 export interface DynamicTableColumn {
   key: string;
   label: string;
   placeholder?: string;
+  /** Masks the cell so it can only hold what the column means. Defaults to free text. */
+  type?: "text" | "int" | "decimal";
+  maxLength?: number;
+  /** Marks the cell red when the row is filled but this value is unusable. */
+  validate?: (value: string) => string | null;
 }
 
 // Add/remove-row table for repeatable structured fields (branches, staff-by-role,
@@ -55,16 +61,39 @@ export function DynamicTable({
           <tbody>
             {rows.map((row, i) => (
               <tr key={i}>
-                {columns.map((c) => (
-                  <td key={c.key} className="p-1">
-                    <Input
-                      value={row[c.key] ?? ""}
-                      placeholder={c.placeholder}
-                      onChange={(e) => updateCell(i, c.key, e.target.value)}
-                      className="h-auto px-2 py-1.5 text-xs"
-                    />
-                  </td>
-                ))}
+                {columns.map((c) => {
+                  const raw = row[c.key] ?? "";
+                  const cellError = c.validate ? c.validate(raw) : null;
+                  return (
+                    <td key={c.key} className="p-1 align-top">
+                      <Input
+                        value={raw}
+                        placeholder={c.placeholder}
+                        inputMode={c.type === "int" ? "numeric" : c.type === "decimal" ? "decimal" : undefined}
+                        aria-invalid={!!cellError || undefined}
+                        title={cellError || undefined}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          updateCell(
+                            i,
+                            c.key,
+                            c.type === "int"
+                              ? maskDigits(v, c.maxLength)
+                              : c.type === "decimal"
+                                ? maskDecimal(v)
+                                : v,
+                          );
+                        }}
+                        className="h-auto px-2 py-1.5 text-xs"
+                      />
+                      {cellError && (
+                        <span className="text-danger-ink mt-0.5 block text-[10px] leading-tight">
+                          {cellError}
+                        </span>
+                      )}
+                    </td>
+                  );
+                })}
                 <td className="p-1">
                   <Button
                     type="button"

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import type { LucideIcon } from "lucide-react";
 import {
   Bell,
   User,
@@ -15,27 +16,100 @@ import {
   Handshake,
   Mail,
   Phone,
+  Compass,
+  ArrowRight,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LogoMark } from "@/components/brand/logo-mark";
 import { useConnectStore } from "@/stores/use-connect-store";
 import { useConnectTenantStore } from "@/stores/use-connect-tenant-store";
-import { logout, hasConnectSession } from "@/lib/connect/connect-api";
+import {
+  logout,
+  hasConnectSession,
+  getProfile,
+  listRequirements,
+  listRequests,
+  listPartners,
+  listMatches,
+} from "@/lib/connect/connect-api";
 
-const NAV = [
-  { href: "/connect/dashboard", label: "Dashboard", icon: Home },
-  { href: "/connect/directory", label: "Directory", icon: Building2 },
-  { href: "/connect/requirements", label: "Requirements", icon: ClipboardList },
-  { href: "/connect/matches", label: "Matches", icon: Target },
-  { href: "/connect/requests", label: "Requests", icon: Inbox },
-  { href: "/connect/partners", label: "Partners", icon: Handshake },
+interface NavItem {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  /** Which slice of `NavStatus` drives this row's badge and sub-items. */
+  key?: "company" | "requirements" | "matches" | "requests" | "partners";
+}
+
+interface NavGroup {
+  heading: string;
+  items: NavItem[];
+}
+
+// The left navigation is grouped the way the work is grouped — your own organisation first,
+// then the network — with each row carrying its live status and, where the data exists, its
+// sub-items underneath.
+const NAV_GROUPS: NavGroup[] = [
+  {
+    heading: "Overview",
+    items: [{ href: "/connect/dashboard", label: "Dashboard", icon: Home }],
+  },
+  {
+    heading: "Your organisation",
+    items: [
+      { href: "/connect/company", label: "Company profile", icon: Building2, key: "company" },
+      { href: "/connect/requirements", label: "Requirements", icon: ClipboardList, key: "requirements" },
+    ],
+  },
+  {
+    heading: "Network",
+    items: [
+      { href: "/connect/directory", label: "Directory", icon: Compass },
+      { href: "/connect/matches", label: "Matches", icon: Target, key: "matches" },
+      { href: "/connect/requests", label: "Requests", icon: Inbox, key: "requests" },
+      { href: "/connect/partners", label: "Partners", icon: Handshake, key: "partners" },
+    ],
+  },
 ];
 
-// Topbar + rail app-home shell — used only for the logged-in Dashboard/Directory/Matches/
-// Requests/Partners area, where a persistent nav is a legitimate pattern. Guards the whole
-// logged-in area: without a session, this redirects home instead of rendering an empty shell.
+// Bottom tab bar below md — the rail's equivalent where a sidebar doesn't fit.
+const MOBILE_TABS: NavItem[] = [
+  { href: "/connect/dashboard", label: "Home", icon: Home },
+  { href: "/connect/directory", label: "Directory", icon: Compass },
+  { href: "/connect/matches", label: "Matches", icon: Target, key: "matches" },
+  { href: "/connect/requests", label: "Requests", icon: Inbox, key: "requests" },
+  { href: "/connect/partners", label: "Partners", icon: Handshake, key: "partners" },
+];
+
+interface Badge {
+  label: string;
+  tone: "success" | "warning" | "blue" | "neutral";
+}
+
+// Menu rows only — a row carries a status badge, never a nested sub-list.
+interface NavStatus {
+  badge?: Badge;
+}
+
+const BADGE_TONE: Record<Badge["tone"], string> = {
+  success: "bg-success-bg text-success-ink",
+  warning: "bg-warning-bg text-warning-ink",
+  blue: "bg-blue-500/10 text-blue-600",
+  neutral: "bg-n100 text-n500",
+};
+
+function isActive(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+// Topbar + grouped left navigation shell for the logged-in Dashboard/Directory/Matches/
+// Requests/Partners area. Guards the whole logged-in area: without a session, this redirects
+// home instead of rendering an empty shell.
 export function ConnectAppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const channelId = useConnectStore((s) => s.channelId);
   const name = useConnectStore((s) => s.name);
   const businessName = useConnectStore((s) => s.businessName);
   const email = useConnectStore((s) => s.email);
@@ -49,6 +123,7 @@ export function ConnectAppShell({ children }: { children: React.ReactNode }) {
   const menuRef = useRef<HTMLDivElement>(null);
   const [loggingOut, setLoggingOut] = useState(false);
   const [sessionOk, setSessionOk] = useState<boolean | null>(null);
+  const [status, setStatus] = useState<Partial<Record<NonNullable<NavItem["key"]>, NavStatus>>>({});
 
   useEffect(() => {
     const ok = hasConnectSession();
@@ -65,6 +140,82 @@ export function ConnectAppShell({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
+  // Statuses shown against each nav row. Best-effort and independent: any one call failing just
+  // leaves that row without a badge rather than breaking navigation.
+  const loadStatus = useCallback(async () => {
+    if (!channelId) return;
+
+    getProfile(channelId)
+      .then((raw) => {
+        const p = raw as { profile_status?: string; completion?: { percent?: number } };
+        const published = p.profile_status === "PUBLISHED";
+        const percent = p.completion?.percent ?? 0;
+        setStatus((s) => ({
+          ...s,
+          company: {
+            badge: published
+              ? { label: "Published", tone: "success" }
+              : { label: `${percent}%`, tone: percent > 0 ? "warning" : "neutral" },
+          },
+        }));
+      })
+      .catch(() => {});
+
+    listRequirements({ channel_id: channelId })
+      .then((raw) => {
+        const count = (((raw as { items?: unknown[] }).items) || []).length;
+        setStatus((s) => ({
+          ...s,
+          requirements: { badge: { label: String(count), tone: count ? "blue" : "neutral" } },
+        }));
+      })
+      .catch(() => {});
+
+    listRequests(channelId)
+      .then((raw) => {
+        const items =
+          ((raw as { items?: { direction: string; request_status: string }[] }).items) || [];
+        const pending = items.filter(
+          (r) => r.direction === "received" && r.request_status === "PENDING",
+        ).length;
+        setStatus((s) => ({
+          ...s,
+          requests: {
+            badge: pending
+              ? { label: String(pending), tone: "warning" }
+              : { label: String(items.length), tone: "neutral" },
+          },
+        }));
+      })
+      .catch(() => {});
+
+    listPartners(channelId)
+      .then((raw) => {
+        const count = (((raw as { items?: unknown[] }).items) || []).length;
+        setStatus((s) => ({
+          ...s,
+          partners: { badge: { label: String(count), tone: count ? "success" : "neutral" } },
+        }));
+      })
+      .catch(() => {});
+
+    listMatches(channelId)
+      .then((raw) => {
+        const count = (((raw as { items?: { matches?: unknown[] }[] }).items) || []).flatMap(
+          (g) => g.matches || [],
+        ).length;
+        setStatus((s) => ({
+          ...s,
+          matches: { badge: { label: String(count), tone: count ? "blue" : "neutral" } },
+        }));
+      })
+      .catch(() => {});
+  }, [channelId]);
+
+  useEffect(() => {
+    loadStatus();
+  }, [loadStatus]);
+
   const handleLogout = async () => {
     setLoggingOut(true);
     await logout();
@@ -79,54 +230,77 @@ export function ConnectAppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="flex h-14 flex-shrink-0 items-center gap-3 border-b border-n200 bg-white px-5">
-        {brandLogo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={brandLogo} alt={brandName || "Fingrid Connect"} className="h-6 max-w-[160px] object-contain" />
-        ) : brandName ? (
-          <span className="text-[15px] font-extrabold text-navy-900">{brandName}</span>
-        ) : (
-          <span className="text-[15px] font-extrabold text-navy-900">
-            Fingrid<i className="font-normal text-blue-600 not-italic">Connect</i>
-          </span>
-        )}
+      {/* Sized to match SiteNav's lockup — 68px bar, 11px gap, 20px wordmark — so the app zone
+          and the marketing site read as the same product. */}
+      <header className="border-n200/80 sticky top-0 z-30 flex h-[68px] flex-shrink-0 items-center gap-3 border-b bg-white/92 px-4 shadow-[0_8px_30px_rgb(1_39_86_/_0.045)] backdrop-blur-[18px] sm:px-5">
+        <Link href="/connect/dashboard" className="flex shrink-0 items-center gap-[11px]">
+          {brandLogo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={brandLogo} alt={brandName || "Fingrid Connect"} className="h-8 max-w-[200px] object-contain" />
+          ) : (
+            <>
+              <LogoMark />
+              <span className="font-display text-navy-900 text-xl font-bold tracking-[-0.02em]">
+                {brandName || (
+                  <>
+                    Fingrid<span className="text-blue-500">Connect</span>
+                  </>
+                )}
+              </span>
+            </>
+          )}
+        </Link>
+        <span className="border-n200 text-n400 ml-1 hidden border-l pl-3 text-[9.5px] leading-[1.25] font-medium tracking-[0.04em] lg:block">
+          PARTNERSHIP
+          <br />
+          MARKETPLACE
+        </span>
+
         <span className="flex-1" />
+
+        <Link
+          href="/"
+          className="text-n500 hover:text-navy-900 hidden items-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-semibold transition-colors sm:flex"
+        >
+          fingrid.ai
+          <ArrowRight size={13} strokeWidth={2.2} className="text-blue-500" />
+        </Link>
         <span
-          className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-n700"
+          className="text-n700 hover:bg-n100 flex size-10 cursor-pointer items-center justify-center rounded-xl transition-colors"
           title="Notifications"
         >
-          <Bell size={18} strokeWidth={2} />
+          <Bell size={19} strokeWidth={2} />
         </span>
         <div className="relative" ref={menuRef}>
           <button
             type="button"
             onClick={() => setMenuOpen((o) => !o)}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-n200 bg-n50 text-n700"
+            className="border-n200 bg-n50 text-n700 hover:border-n300 flex size-10 items-center justify-center rounded-full border transition-colors"
           >
-            <User size={18} strokeWidth={2} />
+            <User size={19} strokeWidth={2} />
           </button>
           {menuOpen && (
-            <div className="absolute top-11 right-0 z-10 w-64 overflow-hidden rounded-lg border border-n200 bg-white shadow-lg">
-              <div className="flex items-center gap-2.5 border-b border-n200 px-3.5 py-3">
-                <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-sm font-bold text-blue-600">
+            <div className="border-n200 absolute top-12 right-0 z-10 w-[288px] overflow-hidden rounded-2xl border bg-white shadow-[0_20px_56px_rgb(1_39_86_/_0.16)]">
+              <div className="border-n200 flex items-center gap-3 border-b px-4 py-3.5">
+                <span className="flex size-11 flex-shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-[17px] font-bold text-blue-600">
                   {initial}
                 </span>
                 <div className="min-w-0">
-                  <div className="truncate text-[13px] font-bold">{displayName}</div>
+                  <div className="text-navy-900 truncate text-[15px] font-bold">{displayName}</div>
                   {businessName && name && (
-                    <div className="truncate text-[11px] text-n500">{businessName}</div>
+                    <div className="text-n500 truncate text-[12.5px]">{businessName}</div>
                   )}
                 </div>
               </div>
-              <div className="space-y-1 border-b border-n200 px-3.5 py-2.5 text-[11px] text-n500">
+              <div className="border-n200 text-n500 space-y-1.5 border-b px-4 py-3 text-[13px]">
                 {email && (
-                  <div className="flex items-center gap-1.5 truncate">
-                    <Mail size={11} strokeWidth={2} /> {email}
+                  <div className="flex items-center gap-2 truncate">
+                    <Mail size={14} strokeWidth={2} className="shrink-0" /> {email}
                   </div>
                 )}
                 {mobile && (
-                  <div className="flex items-center gap-1.5 truncate">
-                    <Phone size={11} strokeWidth={2} /> {mobile}
+                  <div className="flex items-center gap-2 truncate">
+                    <Phone size={14} strokeWidth={2} className="shrink-0" /> {mobile}
                   </div>
                 )}
                 {(entityType || primaryRole) && (
@@ -140,62 +314,112 @@ export function ConnectAppShell({ children }: { children: React.ReactNode }) {
                 type="button"
                 disabled={loggingOut}
                 onClick={handleLogout}
-                className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-xs font-semibold text-danger-ink"
+                className="text-danger-ink hover:bg-danger-bg flex w-full items-center gap-2.5 px-4 py-3 text-left text-[13.5px] font-semibold transition-colors"
               >
-                <LogOut size={14} strokeWidth={2} />
+                <LogOut size={16} strokeWidth={2} />
                 {loggingOut ? "Signing out…" : "Sign out"}
               </button>
             </div>
           )}
         </div>
       </header>
+
       <div className="flex min-h-0 flex-1">
-        {/* Desktop/tablet rail — hidden below md, replaced by the fixed bottom tab bar. */}
-        <nav className="hidden w-[92px] flex-shrink-0 flex-col gap-0.5 border-r border-n200 bg-white py-3 md:flex">
-          {NAV.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex flex-col items-center gap-1 border-l-[3px] px-1 py-3 text-[10.5px] font-semibold transition-colors",
-                  isActive
-                    ? "border-blue-500 bg-blue-500/[.08] text-blue-500"
-                    : "border-transparent text-n700",
-                )}
-              >
-                <item.icon size={20} strokeWidth={2} />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
+        {/* Left navigation panel — menu, submenus and their statuses. Hidden below md. */}
+        <nav
+          aria-label="Fingrid Connect"
+          // Sticky under the 68px topbar with its own scroll, so the menu stays reachable on a
+          // long list page instead of scrolling away with the content.
+          className="border-n200 sticky top-[68px] hidden h-[calc(100vh-68px)] w-[254px] flex-shrink-0 flex-col gap-4 overflow-y-auto border-r bg-white px-3 py-4 md:flex"
+        >
+          {NAV_GROUPS.map((group) => (
+            <div key={group.heading}>
+              <div className="text-n400 mb-1 px-2.5 font-mono text-[9.5px] font-semibold tracking-[0.14em] uppercase">
+                {group.heading}
+              </div>
+              <div className="grid gap-0.5">
+                {group.items.map((item) => {
+                  const active = isActive(pathname, item.href);
+                  const meta = item.key ? status[item.key] : undefined;
+
+                  return (
+                    <div key={item.href}>
+                      <Link
+                        href={item.href}
+                        aria-current={active ? "page" : undefined}
+                        className={cn(
+                          "group/nav flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13.5px] font-medium transition-colors",
+                          active
+                            ? "bg-blue-500/[.09] font-semibold text-blue-600"
+                            : "text-n700 hover:bg-n50 hover:text-navy-900",
+                        )}
+                      >
+                        <item.icon
+                          size={16}
+                          strokeWidth={2}
+                          className={active ? "text-blue-600" : "text-n400"}
+                        />
+                        <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                        {meta?.badge ? (
+                          <span
+                            className={cn(
+                              "rounded-full px-1.5 py-[2px] text-[10px] font-bold",
+                              BADGE_TONE[meta.badge.tone],
+                            )}
+                          >
+                            {meta.badge.label}
+                          </span>
+                        ) : (
+                          <ChevronRight
+                            size={13}
+                            strokeWidth={2}
+                            className="text-n300 opacity-0 transition-opacity group-hover/nav:opacity-100"
+                          />
+                        )}
+                      </Link>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+
+          <div className="mt-auto">
+            <Link
+              href="/connect/requirements/new"
+              className="bg-navy-900 hover:bg-navy-800 flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-[12.5px] font-semibold text-white shadow-[0_9px_24px_rgb(1_39_86_/_0.18)] transition-colors"
+            >
+              Post a requirement
+              <ArrowRight size={13} strokeWidth={2.2} className="text-mint" />
+            </Link>
+            <div className="text-n400 mt-3 px-1 text-[10px]">
+              © {new Date().getFullYear()} {brandName || "Fingrid Connect"} · Powered by Fingrid.ai
+            </div>
+          </div>
         </nav>
+
         <main className="flex min-w-0 flex-1 flex-col overflow-y-auto">
-          <div className="flex-1 p-4 pb-20 sm:p-6 md:pb-6">{children}</div>
-          <footer className="hidden flex-shrink-0 items-center justify-between border-t border-n200 px-6 py-3.5 text-[11px] text-n500 md:flex">
-            <span>
-              © {new Date().getFullYear()} {brandName || "Fingrid Connect"}
-            </span>
-            <span>Powered by Fingrid.ai</span>
-          </footer>
+          <div className="mx-auto w-full max-w-[1160px] flex-1 p-4 pb-24 sm:p-6 md:pb-8">{children}</div>
         </main>
       </div>
 
-      {/* Mobile bottom tab bar — the rail's equivalent below md. */}
-      <nav className="fixed inset-x-0 bottom-0 z-20 flex border-t border-n200 bg-white shadow-lg md:hidden">
-        {NAV.map((item) => {
-          const isActive = pathname === item.href;
+      <nav className="border-n200 fixed inset-x-0 bottom-0 z-20 flex border-t bg-white/95 shadow-[0_-8px_30px_rgb(1_39_86_/_0.08)] backdrop-blur-[18px] md:hidden">
+        {MOBILE_TABS.map((item) => {
+          const active = isActive(pathname, item.href);
+          const badge = item.key ? status[item.key]?.badge : undefined;
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "flex min-w-0 flex-1 flex-col items-center gap-0.5 py-2",
-                isActive ? "text-blue-500" : "text-n700",
+                "relative flex min-w-0 flex-1 flex-col items-center gap-0.5 py-2",
+                active ? "text-blue-500" : "text-n700",
               )}
             >
               <item.icon size={19} strokeWidth={2} />
+              {badge && badge.tone !== "neutral" ? (
+                <span className="bg-blue-500 absolute top-1 right-[22%] size-1.5 rounded-full" />
+              ) : null}
               <span className="max-w-full truncate px-0.5 text-[9px] font-semibold">{item.label}</span>
             </Link>
           );

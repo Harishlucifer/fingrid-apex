@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Handshake, Package, ShieldCheck, ClipboardList, ArrowLeft, ArrowRight, Rocket } from "lucide-react";
-import { StageProgress } from "@/components/connect/stage-progress";
+import { WorkflowSteps, type WorkflowStep } from "@/components/connect/workflow-steps";
+import { NumericInput } from "@/components/connect/numeric-input";
+import * as V from "@/lib/connect/validation";
 import { Card, CardHeader, Field, Alert } from "@/components/connect/card";
 import { PillSelect } from "@/components/connect/pill-select";
 import { Button } from "@/components/ui/button";
@@ -63,6 +65,8 @@ export function RequirementWizardView() {
   const [loading, setLoading] = useState(!!routeRequirementId);
   const [error, setError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [showErrors, setShowErrors] = useState(false);
   const [requirementId, setRequirementId] = useState<string | number | null>(routeRequirementId || null);
 
   const [partnershipType, setPartnershipType] = useState("");
@@ -127,6 +131,8 @@ export function RequirementWizardView() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- clears a stale error when the stage changes
     setValidationError(null);
+    setFieldErrors({});
+    setShowErrors(false);
   }, [stepIdx]);
 
   const buildPayload = (extra: Record<string, unknown> = {}) => ({
@@ -170,18 +176,61 @@ export function RequirementWizardView() {
     }
   };
 
-  const validateStage = () => {
-    if (stepIdx === 0 && !partnershipType) return "Partnership type is required.";
-    if (stepIdx === 1 && ticketMin !== "" && ticketMax !== "" && Number(ticketMin) > Number(ticketMax)) {
-      return "Ticket min cannot be greater than ticket max.";
+  // Per-stage field rules. The numeric inputs are masked so letters can't get in; these catch
+  // required-but-empty, out-of-range, and min/max inversion.
+  const validateStage = (): { errors: Record<string, string>; message: string | null } => {
+    let errors: Record<string, string> = {};
+
+    if (stepIdx === 0) {
+      if (!partnershipType) errors.partnership_type = "Partnership type is required.";
     }
-    return null;
+
+    if (stepIdx === 1) {
+      errors = {
+        ...errors,
+        ...V.validateAll(
+          { cases_per_month: casesPerMonth, ticket_min: ticketMin, ticket_max: ticketMax },
+          {
+            cases_per_month: [V.integer("Cases per month"), V.max("Cases per month", 1_000_000)],
+            ticket_min: [V.decimal("Ticket min"), V.min("Ticket min", 0)],
+            ticket_max: [V.decimal("Ticket max"), V.min("Ticket max", 0)],
+          },
+        ),
+      };
+      if (!errors.ticket_max && ticketMin !== "" && ticketMax !== "" && Number(ticketMin) > Number(ticketMax)) {
+        errors.ticket_max = "Ticket max must be greater than ticket min.";
+      }
+    }
+
+    if (stepIdx === 2) {
+      errors = {
+        ...errors,
+        ...V.validateAll(
+          { min_aum: minAum, min_branches: minBranches, min_field_staff: minFieldStaff },
+          {
+            min_aum: [V.decimal("Min AUM"), V.min("Min AUM", 0)],
+            min_branches: [V.integer("Min branches"), V.max("Min branches", 100_000)],
+            min_field_staff: [V.integer("Min field staff"), V.max("Min field staff", 1_000_000)],
+          },
+        ),
+      };
+    }
+
+    const count = Object.keys(errors).length;
+    return {
+      errors,
+      message: count === 0 ? null : count === 1 ? Object.values(errors)[0] : `Fix ${count} fields to continue.`,
+    };
   };
 
+  const fieldError = (key: string) => (showErrors ? fieldErrors[key] : undefined);
+
   const goNext = async () => {
-    const validationMessage = validateStage();
-    if (validationMessage) {
-      setValidationError(validationMessage);
+    const { errors, message } = validateStage();
+    setFieldErrors(errors);
+    setShowErrors(true);
+    if (message) {
+      setValidationError(message);
       return;
     }
     setValidationError(null);
@@ -194,9 +243,11 @@ export function RequirementWizardView() {
   };
 
   const publish = async () => {
-    const validationMessage = validateStage();
-    if (validationMessage) {
-      setValidationError(validationMessage);
+    const { errors, message } = validateStage();
+    setFieldErrors(errors);
+    setShowErrors(true);
+    if (message) {
+      setValidationError(message);
       return;
     }
     setValidationError(null);
@@ -213,16 +264,38 @@ export function RequirementWizardView() {
   const stageMeta = STAGE_META[stepIdx];
   const StageIcon = stageMeta.icon;
 
+  const steps: WorkflowStep[] = STAGES.map((name, i) => ({
+    label: name || STAGE_META[i]?.title || `Stage ${i + 1}`,
+  }));
+
+  // Runs inside ConnectAppShell (topbar + left menu), so no page shell of its own — and no
+  // Advantages rail, which is signed-out marketing this partner is already past.
   return (
-    <div>
+    <div className="mx-auto w-full max-w-[880px]">
       <button
         type="button"
-        onClick={() => router.push("/connect/dashboard")}
-        className="mb-3 flex items-center gap-1.5 text-xs font-semibold text-n700"
+        onClick={() => router.push("/connect/requirements")}
+        className="text-n500 hover:text-navy-900 mb-3 flex items-center gap-1.5 text-xs font-semibold transition-colors"
       >
-        <ArrowLeft size={14} strokeWidth={2} /> Back to Dashboard
+        <ArrowLeft size={14} strokeWidth={2.2} /> Back to requirements
       </button>
-      <StageProgress workflowLabel="Requirement Listing" stageLabel={STAGES[stepIdx] || ""} currentIndex={stepIdx} total={STAGES.length} />
+      <h1 className="font-display text-navy-900 text-[clamp(23px,2.8vw,30px)] leading-[1.06] font-bold tracking-[-0.04em]">
+        Post a <span className="text-grad">partnership requirement</span>.
+      </h1>
+      <p className="text-n500 mt-2 max-w-[58ch] text-[14px] leading-[1.6]">
+        Describe what you need and Connect ranks candidates across the network by geography,
+        product fit, ticket size and verification tier.
+      </p>
+
+      <WorkflowSteps
+        workflowLabel="Requirement listing"
+        steps={steps}
+        currentIndex={stepIdx}
+        onSelect={(i) => setStepIdx(i)}
+        canSelect={(i) => i <= stepIdx}
+        className="mt-5 mb-4"
+      />
+
       {error && <Alert tone="error">{error}</Alert>}
       {validationError && <Alert tone="error">{validationError}</Alert>}
       <Card>
@@ -234,8 +307,13 @@ export function RequirementWizardView() {
         />
         {stepIdx === 0 && (
           <>
-            <Field label="Partnership type" required>
-              <select value={partnershipType} onChange={(e) => setPartnershipType(e.target.value)} className={inputSm}>
+            <Field label="Partnership type" required error={fieldError("partnership_type")}>
+              <select
+                value={partnershipType}
+                aria-invalid={!!fieldError("partnership_type") || undefined}
+                onChange={(e) => setPartnershipType(e.target.value)}
+                className={inputSm}
+              >
                 <option value="">Select…</option>
                 {partnershipTypes.map((t) => (
                   <option key={t.key} value={t.key}>
@@ -262,14 +340,35 @@ export function RequirementWizardView() {
               <Field label="Target volume / month">
                 <Input value={targetVolume} onChange={(e) => setTargetVolume(e.target.value)} placeholder="₹5 Cr" className={inputSm} />
               </Field>
-              <Field label="Cases / month">
-                <Input value={casesPerMonth} onChange={(e) => setCasesPerMonth(e.target.value)} className={inputSm} />
+              <Field label="Cases / month" error={fieldError("cases_per_month")}>
+                <NumericInput
+                  mode="int"
+                  value={casesPerMonth}
+                  aria-invalid={!!fieldError("cases_per_month") || undefined}
+                  onValueChange={setCasesPerMonth}
+                  placeholder="0"
+                  className={inputSm}
+                />
               </Field>
-              <Field label="Ticket min (₹)">
-                <Input value={ticketMin} onChange={(e) => setTicketMin(e.target.value)} className={inputSm} />
+              <Field label="Ticket min" error={fieldError("ticket_min")} hint="Per case, in ₹">
+                <NumericInput
+                  value={ticketMin}
+                  prefix="₹"
+                  aria-invalid={!!fieldError("ticket_min") || undefined}
+                  onValueChange={setTicketMin}
+                  placeholder="50000"
+                  className={inputSm}
+                />
               </Field>
-              <Field label="Ticket max (₹)">
-                <Input value={ticketMax} onChange={(e) => setTicketMax(e.target.value)} className={inputSm} />
+              <Field label="Ticket max" error={fieldError("ticket_max")} hint="Must exceed ticket min">
+                <NumericInput
+                  value={ticketMax}
+                  prefix="₹"
+                  aria-invalid={!!fieldError("ticket_max") || undefined}
+                  onValueChange={setTicketMax}
+                  placeholder="300000"
+                  className={inputSm}
+                />
               </Field>
             </div>
             <Field label="Expected TAT">
@@ -293,14 +392,36 @@ export function RequirementWizardView() {
               exclude every candidate.
             </Alert>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <Field label="Min AUM (₹ Cr)">
-                <Input value={minAum} onChange={(e) => setMinAum(e.target.value)} className={inputSm} />
+              <Field label="Min AUM" error={fieldError("min_aum")} hint="In ₹ crore">
+                <NumericInput
+                  value={minAum}
+                  prefix="₹"
+                  suffix="Cr"
+                  aria-invalid={!!fieldError("min_aum") || undefined}
+                  onValueChange={setMinAum}
+                  placeholder="0"
+                  className={inputSm}
+                />
               </Field>
-              <Field label="Min branches">
-                <Input value={minBranches} onChange={(e) => setMinBranches(e.target.value)} className={inputSm} />
+              <Field label="Min branches" error={fieldError("min_branches")}>
+                <NumericInput
+                  mode="int"
+                  value={minBranches}
+                  aria-invalid={!!fieldError("min_branches") || undefined}
+                  onValueChange={setMinBranches}
+                  placeholder="0"
+                  className={inputSm}
+                />
               </Field>
-              <Field label="Min field staff">
-                <Input value={minFieldStaff} onChange={(e) => setMinFieldStaff(e.target.value)} className={inputSm} />
+              <Field label="Min field staff" error={fieldError("min_field_staff")}>
+                <NumericInput
+                  mode="int"
+                  value={minFieldStaff}
+                  aria-invalid={!!fieldError("min_field_staff") || undefined}
+                  onValueChange={setMinFieldStaff}
+                  placeholder="0"
+                  className={inputSm}
+                />
               </Field>
             </div>
           </>

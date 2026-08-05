@@ -27,7 +27,10 @@ import {
   Pencil,
   Sparkles,
 } from "lucide-react";
-import { StageProgress } from "@/components/connect/stage-progress";
+import { LogoMark } from "@/components/brand/logo-mark";
+import * as V from "@/lib/connect/validation";
+import { ConnectSplitShell } from "@/components/connect/split-shell";
+import { WorkflowSteps, type WorkflowStep } from "@/components/connect/workflow-steps";
 import { Card, Field, Alert, InitialAvatar } from "@/components/connect/card";
 import { PillSelect } from "@/components/connect/pill-select";
 import { OtpInput } from "@/components/connect/otp-input";
@@ -441,25 +444,56 @@ export function OnboardingWizardView() {
     }
   };
 
+  const steps: WorkflowStep[] = STEPS.map((label, i) => ({ label: label || `Stage ${i + 1}` }));
+
+  // Wider content column than sign-in: the later stages use two-column field grids, and all
+  // five stage pills need to fit on one line without the strip scrolling.
   return (
-    <div>
-      <StageProgress
-        workflowLabel="Registration"
-        stageLabel={STEPS[step] || ""}
+    <ConnectSplitShell contentClassName="max-w-[720px]">
+      <Link href="/" className="flex items-center gap-2.5">
+        <LogoMark />
+        <span className="font-display text-navy-900 text-[17px] font-bold tracking-[-0.02em]">
+          Fingrid<span className="text-blue-500">Connect</span>
+        </span>
+      </Link>
+
+      <h1 className="font-display text-navy-900 mt-7 text-[clamp(25px,3.2vw,33px)] leading-[1.05] font-bold tracking-[-0.04em]">
+        Join the <span className="text-grad">partnership marketplace</span>.
+      </h1>
+      <p className="text-n500 mt-3 text-[14px] leading-[1.6]">
+        Register once, get a verified company identity, and be discoverable by every lender on{" "}
+        {tenantName}.
+      </p>
+
+      <WorkflowSteps
+        workflowLabel="Partner registration"
+        steps={steps}
         currentIndex={step}
-        total={STEPS.length}
+        // Only backwards — jumping ahead would skip the per-stage validation gates.
+        onSelect={(i) => {
+          if (i < step && step !== STEPS.length - 1) setStep(i);
+        }}
+        canSelect={(i) => i < step && step !== STEPS.length - 1}
+        className="mt-6"
       />
-      <Card className="mt-4">
+
+      <Card className="mt-4 p-[clamp(18px,3vw,28px)]">
         {step === 0 && (
           <>
-            <h2 className="mb-1 text-2xl font-bold">Start with your work email</h2>
+            <h2 className="font-display mb-1 text-[22px] font-bold tracking-[-0.03em] text-navy-900">Start with your work email</h2>
             <p className="mb-5 text-[13px] text-n500">
               Your email domain identifies your organisation on {tenantName}.
             </p>
-            <Field label="Work email" required>
+            <Field
+              label="Work email"
+              required
+              error={email.includes("@") ? V.email(email) : null}
+              hint="Your domain decides whether you join an existing company page or create one."
+            >
               <Input
                 type="email"
                 value={email}
+                aria-invalid={(email.includes("@") && !!V.email(email)) || undefined}
                 onChange={(e) => onEmailChange(e.target.value)}
                 placeholder="you@yourcompany.com"
                 className={inputLg}
@@ -691,17 +725,20 @@ export function OnboardingWizardView() {
                           className={inputSm}
                         />
                       </Field>
-                      <Field label="Company PAN" required>
+                      <Field
+                        label="Company PAN"
+                        required
+                        error={companyPan.trim() ? V.pan(companyPan) : null}
+                        hint="Format ABCDE1234F"
+                      >
                         <Input
                           value={companyPan}
-                          onChange={(e) => setCompanyPan(e.target.value.toUpperCase())}
+                          aria-invalid={(!!companyPan.trim() && !!V.pan(companyPan)) || undefined}
+                          onChange={(e) => setCompanyPan(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
                           maxLength={10}
                           placeholder="ABCDE1234F"
                           className={inputSm}
                         />
-                        {companyPan.trim() && !PAN_RE.test(companyPan.trim()) && (
-                          <div className="mt-1 text-[11px] text-danger">Format: ABCDE1234F</div>
-                        )}
                       </Field>
                     </div>
                   </div>
@@ -782,7 +819,7 @@ export function OnboardingWizardView() {
 
         {step === 1 && (
           <>
-            <h2 className="mb-1 text-2xl font-bold">Tell us about you</h2>
+            <h2 className="font-display mb-1 text-[22px] font-bold tracking-[-0.03em] text-navy-900">Tell us about you</h2>
             <p className="mb-5 text-[13px] text-n500">Your personal profile card on {tenantName}.</p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="First name" required>
@@ -792,9 +829,16 @@ export function OnboardingWizardView() {
                 <Input value={lastName} onChange={(e) => setLastName(e.target.value)} className={inputSm} />
               </Field>
             </div>
-            <Field label="Mobile" required>
+            <Field
+              label="Mobile"
+              required
+              error={mobile.length === 10 ? V.mobile(mobile) : null}
+              hint="10 digits, starting 6-9"
+            >
               <Input
                 value={mobile}
+                inputMode="numeric"
+                aria-invalid={(mobile.length === 10 && !!V.mobile(mobile)) || undefined}
                 maxLength={10}
                 onChange={(e) => {
                   setMobile(e.target.value.replace(/\D/g, ""));
@@ -873,7 +917,7 @@ export function OnboardingWizardView() {
 
         {step === 2 && (
           <>
-            <h2 className="mb-1 text-2xl font-bold">Your preferences</h2>
+            <h2 className="font-display mb-1 text-[22px] font-bold tracking-[-0.03em] text-navy-900">Your preferences</h2>
             <p className="mb-5 text-[13px] text-n500">Control how others can reach you.</p>
             <Alert tone="info">Only Lenders with AUM ≥ ₹100 Cr can view &quot;On Request&quot; fields.</Alert>
             {["mobile", "email", "linkedin", "territory"].map((k) => (
@@ -920,7 +964,7 @@ export function OnboardingWizardView() {
 
         {step === 3 && (
           <>
-            <h2 className="mb-1 text-2xl font-bold">Company profile</h2>
+            <h2 className="font-display mb-1 text-[22px] font-bold tracking-[-0.03em] text-navy-900">Company profile</h2>
             {companyMode === "join" ? (
               <>
                 <p className="mb-5 text-[13px] text-n500">
@@ -971,7 +1015,14 @@ export function OnboardingWizardView() {
                   <Input value={inviteName} onChange={(e) => setInviteName(e.target.value)} className={inputSm} />
                 </Field>
                 <Field label="Colleague's email" required>
-                  <Input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} className={inputSm} />
+                  <Input
+                    type="email"
+                    value={inviteEmail}
+                    aria-invalid={(inviteEmail.includes("@") && !!V.email(inviteEmail)) || undefined}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    placeholder="colleague@company.com"
+                    className={inputSm}
+                  />
                 </Field>
               </div>
             )}
@@ -999,7 +1050,7 @@ export function OnboardingWizardView() {
 
         {step === 4 && (
           <>
-            <h2 className="mb-1 text-2xl font-bold">Verify your mobile to sign in</h2>
+            <h2 className="font-display mb-1 text-[22px] font-bold tracking-[-0.03em] text-navy-900">Verify your mobile to sign in</h2>
             <p className="mb-5 text-[13px] text-n500">
               Your account was created{channelId ? ` (ID ${channelId})` : ""}. Enter the OTP sent to {mobile} to sign in for
               the first time.
@@ -1013,6 +1064,6 @@ export function OnboardingWizardView() {
           </>
         )}
       </Card>
-    </div>
+    </ConnectSplitShell>
   );
 }

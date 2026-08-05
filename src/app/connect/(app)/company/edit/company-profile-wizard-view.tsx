@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState, type ComponentType } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { LucideIcon } from "lucide-react";
 import {
   Building2,
   Wallet,
@@ -15,7 +16,7 @@ import {
   CheckCircle2,
   Circle,
 } from "lucide-react";
-import { StageProgress } from "@/components/connect/stage-progress";
+import { WorkflowSteps, type WorkflowStep } from "@/components/connect/workflow-steps";
 import { Card, CardHeader, Field, Alert } from "@/components/connect/card";
 import { DynamicTable } from "@/components/connect/dynamic-table";
 import { PillSelect } from "@/components/connect/pill-select";
@@ -23,11 +24,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useConnectStore } from "@/stores/use-connect-store";
 import { useConnectLookupsStore } from "@/stores/use-connect-lookups-store";
+import { NumericInput } from "@/components/connect/numeric-input";
+import * as V from "@/lib/connect/validation";
 import { useWorkflowStages, type WorkflowStage } from "@/hooks/use-workflow-stages";
 import { getProfile, saveProfile, publishProfile } from "@/lib/connect/connect-api";
 
 interface StageMeta {
-  icon: ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
+  icon: LucideIcon;
   iconBg: string;
   iconColor: string;
   title: string;
@@ -110,10 +113,14 @@ export function CompanyProfileWizardView() {
   const [saving, setSaving] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [showErrors, setShowErrors] = useState(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- clears a stale error when the stage changes
     setValidationError(null);
+    setFieldErrors({});
+    setShowErrors(false);
   }, [stageName]);
 
   const [legal, setLegal] = useState({ legal_name: "", pan: "", cin: "", incorporation_year: "", registered_state: "", website: "" });
@@ -129,49 +136,69 @@ export function CompanyProfileWizardView() {
   const [capabilities, setCapabilities] = useState<Record<string, { enabled?: boolean }>>({});
   const [profileMeta, setProfileMeta] = useState<ProfileMeta | null>(null);
 
-  const loadProfile = useCallback(async () => {
+  // Loads the saved profile into the form. Inlined in the effect rather than memoised: the
+  // React Compiler can't preserve a useCallback whose body sets this many pieces of state.
+  useEffect(() => {
     if (!channelId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- nothing to fetch without a channel
       setLoading(false);
       setApiError("No channel — complete onboarding first.");
       return;
     }
+    let cancelled = false;
     setLoading(true);
-    try {
-      const p = (await getProfile(channelId)) as ProfileMeta;
-      setProfileMeta(p);
-      if (p.legal) setLegal((s) => ({ ...s, ...(p.legal as Record<string, string>) }));
-      if (p.operations) {
-        setOperations({
-          aum: String(p.operations.aum ?? ""),
-          monthly_disbursal: String(p.operations.monthly_disbursal ?? ""),
-        });
-        setLoanMix(p.operations.loan_mix || []);
-        setProducts(p.operations.products || []);
-        setBranches(p.operations.branches || []);
-        setStates((p.operations.geography || []).flatMap((g) => g.states || []));
+    (async () => {
+      try {
+        const p = (await getProfile(channelId)) as ProfileMeta;
+        if (cancelled) return;
+        setProfileMeta(p);
+        // Not a blind spread: the server's legal block is NOT all strings (incorporation_year
+        // is a Go int), and everything downstream — the inputs, validateStage, the rail's
+        // completeness checks — assumes strings. Coerce here, and only for keys we own, so a
+        // new server field can't leak into this state shape either.
+        if (p.legal) {
+          const incoming = p.legal as Record<string, unknown>;
+          setLegal((s) =>
+            Object.fromEntries(
+              Object.keys(s).map((k) => {
+                const v = incoming[k];
+                return [k, v == null ? s[k as keyof typeof s] : String(v)];
+              }),
+            ) as typeof s,
+          );
+        }
+        if (p.operations) {
+          setOperations({
+            aum: String(p.operations.aum ?? ""),
+            monthly_disbursal: String(p.operations.monthly_disbursal ?? ""),
+          });
+          setLoanMix(p.operations.loan_mix || []);
+          setProducts(p.operations.products || []);
+          setBranches(p.operations.branches || []);
+          setStates((p.operations.geography || []).flatMap((g) => g.states || []));
+        }
+        if (p.staff) {
+          setStaff({
+            total_staff: String(p.staff.total_staff ?? ""),
+            field_staff_count: String(p.staff.field_staff_count ?? ""),
+          });
+          setStaffByRole(p.staff.staff_by_role || []);
+        }
+        if (p.empanelments) setEmpanelments(p.empanelments);
+        if (p.credentials) setCredentials(p.credentials);
+        if (p.capabilities) setCapabilities(p.capabilities);
+        setApiError(null);
+      } catch (e) {
+        if (cancelled) return;
+        setApiError(e instanceof Error ? e.message : "Failed to load profile");
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      if (p.staff) {
-        setStaff({
-          total_staff: String(p.staff.total_staff ?? ""),
-          field_staff_count: String(p.staff.field_staff_count ?? ""),
-        });
-        setStaffByRole(p.staff.staff_by_role || []);
-      }
-      if (p.empanelments) setEmpanelments(p.empanelments);
-      if (p.credentials) setCredentials(p.credentials);
-      if (p.capabilities) setCapabilities(p.capabilities);
-      setApiError(null);
-    } catch (e) {
-      setApiError(e instanceof Error ? e.message : "Failed to load profile");
-    } finally {
-      setLoading(false);
-    }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [channelId]);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetches the profile from the server on mount
-    loadProfile();
-  }, [loadProfile]);
 
   const saveStage = async (stage: string, payload: Record<string, unknown>) => {
     setSaving(true);
@@ -203,38 +230,68 @@ export function CompanyProfileWizardView() {
       .filter((r) => (r[requiredKey] ?? "").toString().trim() !== "")
       .map((r) => (numericKey ? { ...r, [numericKey]: num(r[numericKey]) } : r));
 
-  const PAN_RE = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
+  // Per-field rules, keyed the same as the inputs. Masking already stops letters reaching these
+  // fields; the rules catch what a mask can't — required-but-empty, out-of-range, and the
+  // cross-field relationships.
+  const STAGE_RULES: Record<string, Record<string, V.Rule[]>> = {
+    "Legal Identity": {
+      legal_name: [V.required("Registered legal name")],
+      pan: [V.required("PAN"), V.pan],
+      cin: [V.cin],
+      incorporation_year: [V.year],
+      website: [V.url],
+    },
+    Operations: {
+      aum: [V.decimal("AUM"), V.min("AUM", 0), V.max("AUM", 10_000_000)],
+      monthly_disbursal: [
+        V.decimal("Monthly disbursal"),
+        V.min("Monthly disbursal", 0),
+        V.max("Monthly disbursal", 10_000_000),
+      ],
+    },
+    Staff: {
+      total_staff: [V.integer("Total staff"), V.max("Total staff", 1_000_000)],
+      field_staff_count: [V.integer("Field staff count"), V.max("Field staff count", 1_000_000)],
+    },
+  };
 
-  const validateStage = () => {
-    if (stageName === "Legal Identity") {
-      if (!legal.legal_name.trim()) return "Registered legal name is required.";
-      if (!legal.pan.trim()) return "PAN is required.";
-      if (!PAN_RE.test(legal.pan.trim())) return "PAN must be in the format ABCDE1234F.";
+  const stageValues: Record<string, Record<string, string>> = {
+    "Legal Identity": legal,
+    Operations: operations,
+    Staff: staff,
+  };
+
+  // Only surfaced after a failed Next, so a half-typed field isn't scolded mid-keystroke.
+  const fieldError = (key: string) => (showErrors ? fieldErrors[key] : undefined);
+
+  const validateStage = (): { errors: Record<string, string>; message: string | null } => {
+    const rules = STAGE_RULES[stageName] || {};
+    const errors = V.validateAll(stageValues[stageName] || {}, rules);
+
+    // Cross-field rule — belongs to neither input alone, so it hangs off the narrower one.
+    if (
+      stageName === "Staff" &&
+      !errors.field_staff_count &&
+      staff.total_staff !== "" &&
+      staff.field_staff_count !== "" &&
+      Number(staff.field_staff_count) > Number(staff.total_staff)
+    ) {
+      errors.field_staff_count = "Field staff cannot exceed total staff.";
     }
-    if (stageName === "Operations") {
-      if (operations.aum !== "" && Number(operations.aum) < 0) return "AUM cannot be negative.";
-      if (operations.monthly_disbursal !== "" && Number(operations.monthly_disbursal) < 0)
-        return "Monthly disbursal cannot be negative.";
-    }
-    if (stageName === "Staff") {
-      if (staff.total_staff !== "" && Number(staff.total_staff) < 0) return "Total staff cannot be negative.";
-      if (staff.field_staff_count !== "" && Number(staff.field_staff_count) < 0)
-        return "Field staff count cannot be negative.";
-      if (
-        staff.total_staff !== "" &&
-        staff.field_staff_count !== "" &&
-        Number(staff.field_staff_count) > Number(staff.total_staff)
-      ) {
-        return "Field staff count cannot exceed total staff.";
-      }
-    }
-    return null;
+
+    const count = Object.keys(errors).length;
+    return {
+      errors,
+      message: count === 0 ? null : count === 1 ? Object.values(errors)[0] : `Fix ${count} fields to continue.`,
+    };
   };
 
   const goNext = async () => {
-    const validationMessage = validateStage();
-    if (validationMessage) {
-      setValidationError(validationMessage);
+    const { errors, message } = validateStage();
+    setFieldErrors(errors);
+    setShowErrors(true);
+    if (message) {
+      setValidationError(message);
       return;
     }
     setValidationError(null);
@@ -247,7 +304,7 @@ export function CompanyProfileWizardView() {
         operations: {
           aum: num(operations.aum),
           monthly_disbursal: num(operations.monthly_disbursal),
-          branches: branches.filter((r) => (r.location ?? "").trim() !== ""),
+          branches: branches.filter((r) => String(r.location ?? "").trim() !== ""),
           loan_mix: cleanRows(loanMix, "loan_type", "monthly_amount"),
           geography: states.length ? [{ states }] : undefined,
           products,
@@ -290,16 +347,49 @@ export function CompanyProfileWizardView() {
 
   if (loading) return <Card className="py-10 text-center">Loading profile…</Card>;
 
+  const isPublished = profileMeta?.profile_status === "PUBLISHED";
+
+  const steps: WorkflowStep[] = stages.map((name, i) => ({
+    label: name,
+    status:
+      name === "Verify" && isPublished
+        ? "done"
+        : i < stepIdx
+          ? "done"
+          : i === stepIdx
+            ? "current"
+            : "pending",
+  }));
+
+  // Runs inside ConnectAppShell (topbar + left menu), so no page shell of its own — and no
+  // Advantages rail, which is signed-out marketing this partner is already past.
   return (
-    <div>
+    <div className="mx-auto w-full max-w-[880px]">
       <button
         type="button"
-        onClick={() => router.push("/connect/dashboard")}
-        className="mb-3 flex items-center gap-1.5 text-xs font-semibold text-n700"
+        onClick={() => router.push("/connect/company")}
+        className="text-n500 hover:text-navy-900 mb-3 flex items-center gap-1.5 text-xs font-semibold transition-colors"
       >
-        <ArrowLeft size={14} strokeWidth={2} /> Back to Dashboard
+        <ArrowLeft size={14} strokeWidth={2.2} /> Back to company page
       </button>
-      <StageProgress workflowLabel="Company Profile" stageLabel={stageName} currentIndex={stepIdx} total={stages.length} />
+      <h1 className="font-display text-navy-900 text-[clamp(23px,2.8vw,30px)] leading-[1.06] font-bold tracking-[-0.04em]">
+        Build your <span className="text-grad">company page</span>.
+      </h1>
+      <p className="text-n500 mt-2 max-w-[58ch] text-[14px] leading-[1.6]">
+        A complete, verified page is what lenders see when you appear in the directory or in a
+        requirement match.
+      </p>
+
+      <WorkflowSteps
+        workflowLabel="Company profile"
+        steps={steps}
+        currentIndex={stepIdx}
+        // Any stage already reached can be revisited — each one saves independently.
+        onSelect={(i) => setStepIdx(i)}
+        canSelect={(i) => i <= stepIdx}
+        className="mt-5 mb-4"
+      />
+
       {apiError && <Alert tone="warning">{apiError} — form still works locally for review.</Alert>}
       {validationError && <Alert tone="error">{validationError}</Alert>}
       {meta && (
@@ -313,23 +403,56 @@ export function CompanyProfileWizardView() {
 
           {stageName === "Legal Identity" && (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Field label="Registered legal name" required>
-                <Input value={legal.legal_name} onChange={(e) => setLegal({ ...legal, legal_name: e.target.value })} className={inputSm} />
+              <Field label="Registered legal name" required error={fieldError("legal_name")}>
+                <Input
+                  value={legal.legal_name}
+                  aria-invalid={!!fieldError("legal_name") || undefined}
+                  onChange={(e) => setLegal({ ...legal, legal_name: e.target.value })}
+                  className={inputSm}
+                />
               </Field>
-              <Field label="PAN" required>
-                <Input value={legal.pan} onChange={(e) => setLegal({ ...legal, pan: e.target.value.toUpperCase() })} placeholder="ABCDE1234F" className={inputSm} />
+              <Field label="PAN" required error={fieldError("pan")} hint="Format ABCDE1234F">
+                <Input
+                  value={legal.pan}
+                  maxLength={10}
+                  aria-invalid={!!fieldError("pan") || undefined}
+                  onChange={(e) => setLegal({ ...legal, pan: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "") })}
+                  placeholder="ABCDE1234F"
+                  className={inputSm}
+                />
               </Field>
-              <Field label="CIN (if applicable)">
-                <Input value={legal.cin} onChange={(e) => setLegal({ ...legal, cin: e.target.value })} className={inputSm} />
+              <Field label="CIN (if applicable)" error={fieldError("cin")} hint="21 characters">
+                <Input
+                  value={legal.cin}
+                  maxLength={21}
+                  aria-invalid={!!fieldError("cin") || undefined}
+                  onChange={(e) => setLegal({ ...legal, cin: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "") })}
+                  placeholder="U65999TN2019PTC123456"
+                  className={inputSm}
+                />
               </Field>
-              <Field label="Year of incorporation">
-                <Input value={legal.incorporation_year} onChange={(e) => setLegal({ ...legal, incorporation_year: e.target.value })} className={inputSm} />
+              <Field label="Year of incorporation" error={fieldError("incorporation_year")}>
+                <NumericInput
+                  mode="int"
+                  maxLength={4}
+                  value={legal.incorporation_year}
+                  aria-invalid={!!fieldError("incorporation_year") || undefined}
+                  onValueChange={(v) => setLegal({ ...legal, incorporation_year: v })}
+                  placeholder="2019"
+                  className={inputSm}
+                />
               </Field>
               <Field label="Registered state">
                 <Input value={legal.registered_state} onChange={(e) => setLegal({ ...legal, registered_state: e.target.value })} className={inputSm} />
               </Field>
-              <Field label="Website">
-                <Input value={legal.website} onChange={(e) => setLegal({ ...legal, website: e.target.value })} placeholder="https://" className={inputSm} />
+              <Field label="Website" error={fieldError("website")}>
+                <Input
+                  value={legal.website}
+                  aria-invalid={!!fieldError("website") || undefined}
+                  onChange={(e) => setLegal({ ...legal, website: e.target.value })}
+                  placeholder="https://example.com"
+                  className={inputSm}
+                />
               </Field>
             </div>
           )}
@@ -337,11 +460,27 @@ export function CompanyProfileWizardView() {
           {stageName === "Operations" && (
             <>
               <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Field label="Overall AUM (₹ Cr)">
-                  <Input value={operations.aum} onChange={(e) => setOperations({ ...operations, aum: e.target.value })} className={inputSm} />
+                <Field label="Overall AUM" error={fieldError("aum")} hint="In ₹ crore">
+                  <NumericInput
+                    value={operations.aum}
+                    prefix="₹"
+                    suffix="Cr"
+                    aria-invalid={!!fieldError("aum") || undefined}
+                    onValueChange={(v) => setOperations({ ...operations, aum: v })}
+                    placeholder="0"
+                    className={inputSm}
+                  />
                 </Field>
-                <Field label="Monthly disbursal (₹ Cr)">
-                  <Input value={operations.monthly_disbursal} onChange={(e) => setOperations({ ...operations, monthly_disbursal: e.target.value })} className={inputSm} />
+                <Field label="Monthly disbursal" error={fieldError("monthly_disbursal")} hint="In ₹ crore per month">
+                  <NumericInput
+                    value={operations.monthly_disbursal}
+                    prefix="₹"
+                    suffix="Cr"
+                    aria-invalid={!!fieldError("monthly_disbursal") || undefined}
+                    onValueChange={(v) => setOperations({ ...operations, monthly_disbursal: v })}
+                    placeholder="0"
+                    className={inputSm}
+                  />
                 </Field>
               </div>
               <Field label="Primary states">
@@ -365,7 +504,13 @@ export function CompanyProfileWizardView() {
                 <DynamicTable
                   columns={[
                     { key: "loan_type", label: "Loan Type", placeholder: "Two-Wheeler" },
-                    { key: "monthly_amount", label: "₹ Cr / month" },
+                    {
+                      key: "monthly_amount",
+                      label: "₹ Cr / month",
+                      type: "decimal" as const,
+                      placeholder: "0",
+                      validate: (v: string) => V.firstError(v, [V.decimal("Amount"), V.min("Amount", 0)]),
+                    },
                   ]}
                   rows={loanMix}
                   onChange={setLoanMix}
@@ -378,18 +523,42 @@ export function CompanyProfileWizardView() {
           {stageName === "Staff" && (
             <>
               <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Field label="Total staff">
-                  <Input value={staff.total_staff} onChange={(e) => setStaff({ ...staff, total_staff: e.target.value })} className={inputSm} />
+                <Field label="Total staff" error={fieldError("total_staff")}>
+                  <NumericInput
+                    mode="int"
+                    value={staff.total_staff}
+                    aria-invalid={!!fieldError("total_staff") || undefined}
+                    onValueChange={(v) => setStaff({ ...staff, total_staff: v })}
+                    placeholder="0"
+                    className={inputSm}
+                  />
                 </Field>
-                <Field label="Field staff count">
-                  <Input value={staff.field_staff_count} onChange={(e) => setStaff({ ...staff, field_staff_count: e.target.value })} className={inputSm} />
+                <Field
+                  label="Field staff count"
+                  error={fieldError("field_staff_count")}
+                  hint="Cannot exceed total staff"
+                >
+                  <NumericInput
+                    mode="int"
+                    value={staff.field_staff_count}
+                    aria-invalid={!!fieldError("field_staff_count") || undefined}
+                    onValueChange={(v) => setStaff({ ...staff, field_staff_count: v })}
+                    placeholder="0"
+                    className={inputSm}
+                  />
                 </Field>
               </div>
               <Field label="Staff by role">
                 <DynamicTable
                   columns={[
                     { key: "role", label: "Role", placeholder: "Field Sales" },
-                    { key: "count", label: "Count" },
+                    {
+                      key: "count",
+                      label: "Count",
+                      type: "int" as const,
+                      placeholder: "0",
+                      validate: (v: string) => V.integer("Count")(v),
+                    },
                     { key: "locations", label: "Locations" },
                   ]}
                   rows={staffByRole}
@@ -407,7 +576,14 @@ export function CompanyProfileWizardView() {
                   columns={[
                     { key: "client_name", label: "Lender", placeholder: "FlexiLoans" },
                     { key: "product_segment", label: "Product" },
-                    { key: "active_since", label: "Since" },
+                    {
+                      key: "active_since",
+                      label: "Since (year)",
+                      type: "int" as const,
+                      maxLength: 4,
+                      placeholder: "2021",
+                      validate: (v: string) => V.year(v),
+                    },
                     { key: "reference_no", label: "Ref #" },
                   ]}
                   rows={empanelments}
@@ -523,9 +699,9 @@ export function CompanyProfileWizardView() {
             )}
           </Button>
         )}
-        {stageName === "Verify" && profileMeta?.profile_status === "PUBLISHED" && (
-          <Button type="button" variant="fgBlue" onClick={() => router.push("/connect/dashboard")} className="gap-1.5 px-6 py-2.5">
-            Go to Dashboard <ArrowRight size={14} strokeWidth={2} />
+        {stageName === "Verify" && isPublished && (
+          <Button type="button" variant="fgBlue" onClick={() => router.push("/connect/company")} className="gap-1.5 px-6 py-2.5">
+            View company page <ArrowRight size={14} strokeWidth={2} />
           </Button>
         )}
       </div>

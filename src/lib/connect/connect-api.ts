@@ -445,13 +445,34 @@ async function authRequest(body: Record<string, unknown>) {
   return { httpOk: res.ok, json };
 }
 
+// Sign-in failures the UI treats differently from a generic error. `code` is derived from
+// alpha-api's LoginWithOtp status codes rather than from the message text, which is a bare
+// "Invalid credentials" and is not safe to match on.
+export type SignInErrorCode = "not_registered" | "inactive" | "unknown";
+
+export class SignInError extends Error {
+  readonly code: SignInErrorCode;
+  constructor(message: string, code: SignInErrorCode) {
+    super(message);
+    this.name = "SignInError";
+    this.code = code;
+  }
+}
+
 export async function sendSignInOtp(mobile: string) {
   const { json } = await authRequest({ mobile });
   // status -6 here means "OTP sent" — not a failure.
-  if (json?.status !== -6) {
-    throw new Error(errorMessage(json, "Failed to send OTP"));
+  if (json?.status === -6) return true;
+  // -2 is returned when FindByActiveMobile finds no active PARTNER_PORTAL user for this number
+  // (or the channel is Terminated) — i.e. there is no Connect account to sign in to.
+  if (json?.status === -2) {
+    throw new SignInError("This number is not registered with Fingrid Connect.", "not_registered");
   }
-  return true;
+  // -104 is a deactivated partner; the server supplies the tenant's own wording for it.
+  if (json?.status === -104) {
+    throw new SignInError(errorMessage(json, "This partner account is inactive."), "inactive");
+  }
+  throw new SignInError(errorMessage(json, "Failed to send OTP"), "unknown");
 }
 
 export async function resendSignInOtp(mobile: string, retryType?: string) {

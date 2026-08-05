@@ -516,9 +516,12 @@ function MobileNav() {
           </Accordion>
 
           <div className="border-n100 mt-5 grid gap-2.5 border-t pt-5">
-            {/* Entry point into Fingrid Connect — the signed-in partner app zone. */}
+            {/* Entry point into Fingrid Connect — the signed-in partner app zone. Opens in a new
+                tab so a partner session doesn't replace whatever they were reading here. */}
             <Button asChild size="cta" variant="fgGhost">
-              <Link href="/connect/login">Community</Link>
+              <Link href="/connect/login" target="_blank" rel="noopener noreferrer">
+                Community
+              </Link>
             </Button>
             <Button asChild size="cta" variant="fgPrimary">
               <Link href="/pricing#demo">
@@ -576,7 +579,9 @@ export function SiteNav() {
             variant="ghost"
             className="text-navy-900 hidden rounded-xl px-4 py-2.5 text-[14px] xl:inline-flex"
           >
-            <Link href="/connect/login">Community</Link>
+            <Link href="/connect/login" target="_blank" rel="noopener noreferrer">
+              Community
+            </Link>
           </Button>
           <Button
             asChild
