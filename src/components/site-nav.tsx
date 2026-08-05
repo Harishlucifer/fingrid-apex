@@ -372,7 +372,7 @@ function DesktopItem({ item, pathname }: { item: NavItem; pathname: string }) {
   );
 }
 
-function MobileNav() {
+function MobileNav({ connectEnabled }: { connectEnabled: boolean }) {
   const { mobileOpen, setMobileOpen, openSection, setOpenSection, close } =
     useNavStore();
   const pathname = usePathname();
@@ -517,12 +517,15 @@ function MobileNav() {
 
           <div className="border-n100 mt-5 grid gap-2.5 border-t pt-5">
             {/* Entry point into Fingrid Connect — the signed-in partner app zone. Opens in a new
-                tab so a partner session doesn't replace whatever they were reading here. */}
-            <Button asChild size="cta" variant="fgGhost">
-              <Link href="/connect/login" target="_blank" rel="noopener noreferrer">
-                Community
-              </Link>
-            </Button>
+                tab so a partner session doesn't replace whatever they were reading here.
+                Hidden entirely when ENABLE_CONNECT is off; the routes 404 in that case anyway. */}
+            {connectEnabled && (
+              <Button asChild size="cta" variant="fgGhost">
+                <Link href="/connect/login" target="_blank" rel="noopener noreferrer">
+                  Community
+                </Link>
+              </Button>
+            )}
             <Button asChild size="cta" variant="fgPrimary">
               <Link href="/pricing#demo">
                 Book a tailored demo
@@ -543,7 +546,7 @@ function MobileNav() {
   );
 }
 
-export function SiteNav() {
+export function SiteNav({ connectEnabled = false }: { connectEnabled?: boolean }) {
   const pathname = usePathname();
 
   return (
@@ -573,16 +576,18 @@ export function SiteNav() {
 
         <div className="flex shrink-0 items-center gap-1.5">
           {/* Entry point into Fingrid Connect — the signed-in partner app zone. */}
-          <Button
-            asChild
-            size="cta"
-            variant="ghost"
-            className="text-navy-900 hidden rounded-xl px-4 py-2.5 text-[14px] xl:inline-flex"
-          >
-            <Link href="/connect/login" target="_blank" rel="noopener noreferrer">
-              Community
-            </Link>
-          </Button>
+          {connectEnabled && (
+            <Button
+              asChild
+              size="cta"
+              variant="ghost"
+              className="text-navy-900 hidden rounded-xl px-4 py-2.5 text-[14px] xl:inline-flex"
+            >
+              <Link href="/connect/login" target="_blank" rel="noopener noreferrer">
+                Community
+              </Link>
+            </Button>
+          )}
           <Button
             asChild
             size="cta"
@@ -594,7 +599,7 @@ export function SiteNav() {
               <ArrowRight className="text-mint size-4" />
             </Link>
           </Button>
-          <MobileNav />
+          <MobileNav connectEnabled={connectEnabled} />
         </div>
       </div>
     </header>

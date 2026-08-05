@@ -1,8 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState, type ReactNode, type ComponentType } from "react";
-import { Inbox, Send, CheckCircle2, Clock, X } from "lucide-react";
+import Link from "next/link";
+import { Inbox, Send, CheckCircle2, Clock, X, Lock, ChevronRight } from "lucide-react";
 import { Card, Alert, PageHeader, StatStrip, InitialAvatar } from "@/components/connect/card";
+import { Pagination } from "@/components/connect/pagination";
+import { usePaged } from "@/hooks/use-paged";
 import { Button } from "@/components/ui/button";
 import { useConnectStore } from "@/stores/use-connect-store";
 import { listRequests, respondToRequest, cancelRequest } from "@/lib/connect/connect-api";
@@ -48,7 +51,7 @@ interface RequestItem {
   request_status: string;
   message?: string;
   created_at?: string;
-  counterparty?: { name?: string };
+  counterparty?: { channel_id?: string | number; name?: string };
 }
 
 export function RequestsView() {
@@ -91,6 +94,9 @@ export function RequestsView() {
   const sent = items.filter((r) => r.direction === "sent");
   const history = items.filter((r) => r.direction === "received" && r.request_status !== "PENDING");
   const acceptedCount = items.filter((r) => r.request_status === "ACCEPTED").length;
+  // These two grow over time; "awaiting your response" is a worklist you clear, so it stays whole.
+  const sentPage = usePaged(sent, 5);
+  const historyPage = usePaged(history, 5);
 
   if (loading) return <Card className="py-8 text-center text-sm">Loading requests…</Card>;
 
@@ -145,7 +151,7 @@ export function RequestsView() {
       <Section icon={Send} title="Sent by you" count={sent.length}>
         {sent.length === 0
           ? emptyRow("You haven't sent any connect requests yet.")
-          : sent.map((r) => (
+          : sentPage.pageItems.map((r) => (
               <div key={r.request_id} className="flex items-center justify-between gap-3 border-t border-n200 py-2.5">
                 <div className="flex min-w-0 items-center gap-3">
                   <InitialAvatar name={r.counterparty?.name} />
@@ -173,19 +179,73 @@ export function RequestsView() {
                 )}
               </div>
             ))}
+        <Pagination
+          page={sentPage.page}
+          pageSize={sentPage.pageSize}
+          total={sentPage.total}
+          onPageChange={sentPage.setPage}
+        />
       </Section>
 
       {history.length > 0 && (
         <Section icon={Clock} title="Past received" count={history.length}>
-          {history.map((r) => (
-            <div key={r.request_id} className="flex items-center justify-between gap-3 border-t border-n200 py-2.5">
-              <div className="flex min-w-0 items-center gap-3">
-                <InitialAvatar name={r.counterparty?.name} />
-                <div className="truncate text-sm font-bold">{r.counterparty?.name || "Unknown"}</div>
+          {/* Only an ACCEPTED request opens the counterparty's profile. A cancelled or rejected
+              one leaves no relationship, so the row stays at name + outcome and links nowhere —
+              the same rule the server applies to contact data, mirrored in the UI so we don't
+              offer a door that would only lead to a locked page. */}
+          {historyPage.pageItems.map((r) => {
+            const accepted = r.request_status === "ACCEPTED";
+            const targetId = r.counterparty?.channel_id;
+            const body = (
+              <>
+                <div className="flex min-w-0 items-center gap-3">
+                  <InitialAvatar name={r.counterparty?.name} />
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-bold">{r.counterparty?.name || "Unknown"}</div>
+                    <div className="text-n400 mt-0.5 flex items-center gap-1 text-[11px]">
+                      {accepted ? (
+                        "Connected — full profile available"
+                      ) : (
+                        <>
+                          <Lock size={10} strokeWidth={2.2} />
+                          Details limited — request not accepted
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <StatusBadge status={r.request_status} />
+                  {accepted && targetId && (
+                    <ChevronRight size={15} strokeWidth={2} className="text-n300" />
+                  )}
+                </div>
+              </>
+            );
+
+            return accepted && targetId ? (
+              <Link
+                key={r.request_id}
+                href={`/connect/partners/${targetId}`}
+                className="border-n200 hover:bg-n50 -mx-1 flex items-center justify-between gap-3 rounded-lg border-t px-1 py-2.5 transition-colors"
+              >
+                {body}
+              </Link>
+            ) : (
+              <div
+                key={r.request_id}
+                className="border-n200 flex items-center justify-between gap-3 border-t py-2.5"
+              >
+                {body}
               </div>
-              <StatusBadge status={r.request_status} />
-            </div>
-          ))}
+            );
+          })}
+          <Pagination
+            page={historyPage.page}
+            pageSize={historyPage.pageSize}
+            total={historyPage.total}
+            onPageChange={historyPage.setPage}
+          />
         </Section>
       )}
     </div>

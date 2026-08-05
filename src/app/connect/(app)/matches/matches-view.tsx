@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { CheckCircle2, Target, ShieldCheck } from "lucide-react";
 import { Card, Alert, PageHeader, InitialAvatar } from "@/components/connect/card";
+import { Pagination } from "@/components/connect/pagination";
+import { usePaged } from "@/hooks/use-paged";
 import { Button } from "@/components/ui/button";
 import { useConnectStore } from "@/stores/use-connect-store";
 import { useConnectLookupsStore } from "@/stores/use-connect-lookups-store";
@@ -115,6 +117,9 @@ export function MatchesView() {
     .map((g) => ({ ...g, matches: (g.matches || []).filter((m) => !partneredIds.has(m.channel_id)) }))
     .filter((g) => g.matches.length > 0);
   const totalMatches = visibleGroups.reduce((sum, g) => sum + g.matches.length, 0);
+  // Paged by requirement group, not by candidate — splitting one requirement's candidates
+  // across pages would break the "N candidates" count that heads each group.
+  const { page, setPage, pageItems: pagedGroups, pageSize, total } = usePaged(visibleGroups, 3);
 
   return (
     <div>
@@ -139,7 +144,7 @@ export function MatchesView() {
           </div>
         </Card>
       )}
-      {visibleGroups.map((g) => (
+      {pagedGroups.map((g) => (
         <div key={g.requirement_id} className="mb-6">
           <div className="mb-3 flex items-center gap-2">
             <span className="rounded-full bg-blue-500/10 px-2.5 py-1 text-[11px] font-bold text-blue-600">
@@ -221,6 +226,16 @@ export function MatchesView() {
           </div>
         </div>
       ))}
+
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        onPageChange={(n) => {
+          setPage(n);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+      />
     </div>
   );
 }

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Pagination } from "@/components/connect/pagination";
+import { usePaged } from "@/hooks/use-paged";
 import { Handshake, ChevronRight, CalendarDays, Users, Landmark, Search } from "lucide-react";
 import { Card, Alert, PageHeader, StatStrip, InitialAvatar } from "@/components/connect/card";
 import { useConnectStore } from "@/stores/use-connect-store";
@@ -36,6 +38,7 @@ export function PartnersView() {
   const channelId = useConnectStore((s) => s.channelId);
   const router = useRouter();
   const [items, setItems] = useState<PartnerItem[]>([]);
+  const { page, setPage, pageItems, pageSize, total } = usePaged(items, 9);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -82,7 +85,7 @@ export function PartnersView() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((p) => (
+          {pageItems.map((p) => (
             <Card
               key={p.relationship_id}
               className="flex cursor-pointer flex-col transition-shadow hover:shadow-md"
@@ -110,6 +113,8 @@ export function PartnersView() {
           ))}
         </div>
       )}
+
+      <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
     </div>
   );
 }

@@ -7,7 +7,11 @@ import { Card, Alert, PageHeader, InitialAvatar } from "@/components/connect/car
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useConnectStore } from "@/stores/use-connect-store";
+import { Pagination } from "@/components/connect/pagination";
 import { listDirectory, sendConnectRequest, cancelRequest, listRequests, listPartners } from "@/lib/connect/connect-api";
+
+// Matches the server's own default page size.
+const DIRECTORY_PAGE_SIZE = 20;
 
 interface DirectoryContact {
   person_name?: string;
@@ -50,6 +54,10 @@ export function DirectoryView() {
   const router = useRouter();
   const [entries, setEntries] = useState<DirectoryEntry[]>([]);
   const [query, setQuery] = useState("");
+  // Server-side paging: the API caps at 20 per page, so without sending a page the rest of the
+  // network was simply unreachable from this screen.
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [pendingByTarget, setPendingByTarget] = useState<Record<string, string | number>>({});
@@ -83,12 +91,27 @@ export function DirectoryView() {
       .catch(() => {});
   }, [channelId]);
 
+  // A new search starts at page 1 — otherwise a narrower result set can leave you on a page
+  // that no longer exists.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resets paging when the query changes
+    setPage(1);
+  }, [query]);
+
   useEffect(() => {
     if (!channelId) return;
-    listDirectory(channelId, query ? { q: query } : {})
-      .then((raw) => setEntries(((raw as { items?: DirectoryEntry[] }).items) || []))
+    listDirectory(channelId, {
+      ...(query ? { q: query } : {}),
+      page: String(page),
+      limit: String(DIRECTORY_PAGE_SIZE),
+    })
+      .then((raw) => {
+        const res = raw as { items?: DirectoryEntry[]; pagination?: { total?: number } };
+        setEntries(res.items || []);
+        setTotal(res.pagination?.total ?? (res.items || []).length);
+      })
       .catch((e) => setError(e instanceof Error ? e.message : "Failed to load directory"));
-  }, [channelId, query]);
+  }, [channelId, query, page]);
 
   useEffect(() => {
     loadRequests();
@@ -250,6 +273,16 @@ export function DirectoryView() {
           </Card>
         )}
       </div>
+
+      <Pagination
+        page={page}
+        pageSize={DIRECTORY_PAGE_SIZE}
+        total={total}
+        onPageChange={(n) => {
+          setPage(n);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+      />
     </div>
   );
 }

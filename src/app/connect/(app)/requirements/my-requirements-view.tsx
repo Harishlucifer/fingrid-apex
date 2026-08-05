@@ -7,7 +7,10 @@ import { Card, Alert, PageHeader, StatStrip } from "@/components/connect/card";
 import { Button } from "@/components/ui/button";
 import { useConnectStore } from "@/stores/use-connect-store";
 import { useConnectLookupsStore } from "@/stores/use-connect-lookups-store";
+import { Pagination } from "@/components/connect/pagination";
 import { listRequirements, closeRequirement } from "@/lib/connect/connect-api";
+
+const REQ_PAGE_SIZE = 10;
 
 const STATUS_STYLE: Record<string, string> = {
   DRAFT: "bg-n50 text-n500",
@@ -33,14 +36,20 @@ export function MyRequirementsView() {
   const channelId = useConnectStore((s) => s.channelId);
   const partnershipTypes = useConnectLookupsStore((s) => s.partnershipTypes);
   const [items, setItems] = useState<RequirementItem[]>([]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     if (!channelId) return;
-    listRequirements({ channel_id: channelId })
-      .then((raw) => setItems(((raw as { items?: RequirementItem[] }).items) || []))
+    listRequirements({ channel_id: channelId, page: String(page), limit: String(REQ_PAGE_SIZE) })
+      .then((raw) => {
+        const res = raw as { items?: RequirementItem[]; pagination?: { total?: number } };
+        setItems(res.items || []);
+        setTotal(res.pagination?.total ?? (res.items || []).length);
+      })
       .catch((e) => setError(e instanceof Error ? e.message : "Failed to load requirements"));
-  }, [channelId]);
+  }, [channelId, page]);
 
   useEffect(() => {
     load();
@@ -165,6 +174,16 @@ export function MyRequirementsView() {
           })}
         </div>
       )}
+
+      <Pagination
+        page={page}
+        pageSize={REQ_PAGE_SIZE}
+        total={total}
+        onPageChange={(n) => {
+          setPage(n);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+      />
     </div>
   );
 }

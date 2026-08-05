@@ -18,12 +18,14 @@ import {
   Circle,
   Compass,
   Rocket,
+  MapPin,
 } from "lucide-react";
 import { Card, Alert } from "@/components/connect/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useConnectStore } from "@/stores/use-connect-store";
 import { useConnectTenantStore } from "@/stores/use-connect-tenant-store";
+import { useConnectLookupsStore } from "@/stores/use-connect-lookups-store";
 import { getProfile, listRequirements, listRequests, listPartners, listMatches, listDirectory } from "@/lib/connect/connect-api";
 
 // Circular completion gauge for the company-status hero.
@@ -58,6 +60,9 @@ function ProgressRing({ percent, size = 104, stroke = 9 }: { percent: number; si
 }
 
 const avatarInitial = (s?: string) => (s || "?").trim().charAt(0).toUpperCase();
+
+// Two full rows of four. Anything past this belongs in the directory.
+const DISCOVER_LIMIT = 8;
 
 // ---- small building blocks -------------------------------------------------
 
@@ -196,7 +201,12 @@ interface RequestItem {
 }
 interface PartnerItem {
   relationship_id: string | number;
-  counterparty?: { name?: string };
+  counterparty?: {
+    channel_id?: string | number;
+    name?: string;
+    entity_type?: string;
+    state?: string;
+  };
 }
 interface MatchGroup {
   matches?: MatchItem[];
@@ -224,6 +234,7 @@ export function DashboardView() {
   const name = useConnectStore((s) => s.name);
   const businessName = useConnectStore((s) => s.businessName);
   const tenant = useConnectTenantStore((s) => s.tenant);
+  const entityByKey = useConnectLookupsStore((s) => s.entityByKey);
 
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
   const [requirements, setRequirements] = useState<RequirementItem[]>([]);
@@ -232,6 +243,8 @@ export function DashboardView() {
   const [topMatches, setTopMatches] = useState<MatchItem[]>([]);
   const [matchCount, setMatchCount] = useState(0);
   const [discover, setDiscover] = useState<DirectoryItem[]>([]);
+  // Full network size, so the "N more" link reflects reality rather than the page slice.
+  const [discoverTotal, setDiscoverTotal] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -263,7 +276,12 @@ export function DashboardView() {
       })
       .catch(() => {});
     listDirectory(channelId, {})
-      .then((r) => setDiscover((((r as { items?: DirectoryItem[] }).items) || []).slice(0, 8)))
+      .then((r) => {
+        const res = r as { items?: DirectoryItem[]; pagination?: { total?: number } };
+        const items = res.items || [];
+        setDiscover(items.slice(0, DISCOVER_LIMIT));
+        setDiscoverTotal(res.pagination?.total ?? items.length);
+      })
       .catch(() => {});
   }, [channelId]);
 
@@ -589,24 +607,46 @@ export function DashboardView() {
               cta={{ label: "Browse directory", href: "/connect/directory" }}
             />
           ) : (
-            <div className="flex flex-1 flex-col justify-center">
-              <div className="flex flex-wrap items-center gap-2">
-                {partners.slice(0, 8).map((p) => (
-                  <span
-                    key={p.relationship_id}
-                    title={p.counterparty?.name}
-                    className="bg-success-bg text-success-ink flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-white text-[13px] font-bold shadow-sm"
-                  >
-                    {avatarInitial(p.counterparty?.name)}
-                  </span>
+            /* A named, clickable list rather than a row of anonymous initials — the old version
+               left most of the card empty and you couldn't tell who anyone was. */
+            <div className="flex flex-1 flex-col">
+              <ul className="divide-n100 flex-1 divide-y">
+                {partners.slice(0, 4).map((p) => (
+                  <li key={p.relationship_id}>
+                    <Link
+                      href={`/connect/partners/${p.counterparty?.channel_id ?? ""}`}
+                      className="group/p -mx-1 flex items-center gap-3 rounded-lg px-1 py-2.5 transition-colors hover:bg-n50"
+                    >
+                      <span className="bg-success-bg text-success-ink ring-success/20 grid size-9 shrink-0 place-items-center rounded-xl text-[12px] font-bold ring-1">
+                        {avatarInitial(p.counterparty?.name)}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="text-navy-900 block truncate text-[12.5px] font-semibold">
+                          {p.counterparty?.name || "Partner"}
+                        </span>
+                        <span className="text-n500 block truncate text-[11px]">
+                          {[
+                            entityByKey(p.counterparty?.entity_type ?? "").label ||
+                              p.counterparty?.entity_type,
+                            p.counterparty?.state,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ") || "Active partnership"}
+                        </span>
+                      </span>
+                      <ChevronRight
+                        size={14}
+                        strokeWidth={2}
+                        className="text-n300 shrink-0 transition-transform group-hover/p:translate-x-0.5"
+                      />
+                    </Link>
+                  </li>
                 ))}
-                {partners.length > 8 && (
-                  <span className="text-n500 text-[12px] font-bold">+{partners.length - 8}</span>
-                )}
-              </div>
-              <div className="text-n500 mt-3 text-[12px]">
+              </ul>
+              <div className="text-n500 border-n100 mt-1 border-t pt-2.5 text-[11.5px]">
                 <b className="text-navy-900 font-semibold">{partners.length}</b> active relationship
                 {partners.length > 1 ? "s" : ""}
+                {partners.length > 4 && ` · showing 4`}
               </div>
             </div>
           )}
@@ -626,33 +666,70 @@ export function DashboardView() {
             body="Published organisations across the network appear here — the directory fills up as partners go live."
           />
         ) : (
-          <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
-            {discover.map((d) => (
+          <>
+            {/* A fixed 4-across grid rather than a scroller: 8 cards fill exactly two rows, and
+                everything beyond that is the directory's job. */}
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {discover.map((d) => {
+                const vetted = !!d.verification_tier && d.verification_tier !== "TIER_0";
+                return (
+                  <Link
+                    key={d.channel_id}
+                    href={`/connect/partners/${d.channel_id}`}
+                    title={`View ${d.name}`}
+                    className="group/disc border-n200 hover:border-blue-500/40 flex min-w-0 flex-col rounded-xl border bg-white p-3.5 transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgb(1_39_86_/_0.09)]"
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <span className="from-navy-900 grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br to-blue-600 text-[13px] font-bold text-white">
+                        {avatarInitial(d.name)}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="font-display text-navy-900 block truncate text-[13px] font-semibold">
+                          {d.name}
+                        </span>
+                        <span className="text-n500 mt-0.5 block truncate text-[11px]">
+                          {entityByKey(d.entity_type ?? "").label || d.entity_type}
+                        </span>
+                      </span>
+                    </div>
+
+                    <div className="text-n500 mt-2.5 flex items-center gap-1.5 text-[11px]">
+                      <MapPin size={11} strokeWidth={2.2} className="text-n300 shrink-0" />
+                      <span className="truncate">{d.state || "Location not set"}</span>
+                    </div>
+
+                    <div className="border-n100 mt-2.5 flex items-center justify-between gap-2 border-t pt-2.5">
+                      <span className="text-navy-900 truncate text-[11.5px] font-semibold">
+                        {d.aum && d.aum > 0 ? `₹${d.aum} Cr` : <span className="text-n400 font-normal">AUM N/A</span>}
+                      </span>
+                      <span
+                        className={cn(
+                          "flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold",
+                          vetted ? "bg-success-bg text-success-ink" : "bg-n100 text-n500",
+                        )}
+                      >
+                        {vetted && <ShieldCheck size={10} strokeWidth={2.5} />}
+                        {d.verification_tier}
+                      </span>
+                    </div>
+
+                    <span className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-blue-600 opacity-0 transition-opacity group-hover/disc:opacity-100">
+                      View profile <ArrowRight size={11} strokeWidth={2.5} />
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+            {discoverTotal > discover.length && (
               <Link
-                key={d.channel_id}
                 href="/connect/directory"
-                className="border-n200 bg-n50 hover:border-n300 w-48 flex-shrink-0 rounded-xl border p-3.5 transition-colors hover:bg-white"
+                className="text-n500 hover:text-navy-900 border-n100 mt-3.5 flex items-center justify-center gap-1.5 border-t pt-3.5 text-[12px] font-semibold transition-colors"
               >
-                <div className="mb-2 flex items-center gap-2">
-                  <span className="bg-n100 text-navy-900 flex size-8 flex-shrink-0 items-center justify-center rounded-lg text-[12px] font-bold">
-                    {avatarInitial(d.name)}
-                  </span>
-                  <div className="text-navy-900 truncate text-[12.5px] font-semibold">{d.name}</div>
-                </div>
-                <div className="text-n500 mb-1.5 truncate text-[11px]">
-                  {d.entity_type} · {d.state || "—"}
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-n400 text-[10.5px]">
-                    {d.aum && d.aum > 0 ? `₹${d.aum} Cr` : "AUM N/A"}
-                  </span>
-                  <span className="bg-n100 text-navy-900 rounded px-1.5 py-0.5 text-[10px] font-bold">
-                    {d.verification_tier}
-                  </span>
-                </div>
+                {discoverTotal - discover.length} more in the directory
+                <ChevronRight size={13} strokeWidth={2.2} />
               </Link>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </SectionCard>
     </div>
