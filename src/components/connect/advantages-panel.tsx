@@ -152,7 +152,11 @@ function AdvantagesHero({ className }: { className?: string }) {
         <Wordmark onDark className="text-[22px]" />
       </Link>
 
-      <div className="relative my-9">
+      {/* my-auto centres this between the logo and the stats block — all three stay in flow so
+          nothing can overlap on a short viewport. The asymmetric padding compensates for the
+          stats block being ~70px taller than the logo row, which otherwise pulls this block
+          above the form column's viewport-centred heading. */}
+      <div className="relative my-auto pt-[72px] pb-8">
         <div className="text-mint flex items-center gap-2 font-mono text-[10px] font-semibold tracking-[0.14em] uppercase">
           <span className="animate-fg-pulse bg-mint size-1.5 rounded-full" />
           Why Fingrid Connect
@@ -184,7 +188,7 @@ function AdvantagesHero({ className }: { className?: string }) {
         </ul>
       </div>
 
-      <div className="relative">
+      <div className="relative shrink-0">
         <dl className="grid grid-cols-3 gap-3 border-t border-white/10 pt-4">
           {PROOF.map(([value, label]) => (
             <div key={label}>

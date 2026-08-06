@@ -151,34 +151,65 @@ export function RequestsView() {
       <Section icon={Send} title="Sent by you" count={sent.length}>
         {sent.length === 0
           ? emptyRow("You haven't sent any connect requests yet.")
-          : sentPage.pageItems.map((r) => (
-              <div key={r.request_id} className="flex items-center justify-between gap-3 border-t border-n200 py-2.5">
+          : sentPage.pageItems.map((r) => {
+              // Same rule as Past received: an ACCEPTED request means an active relationship,
+              // so the row opens the partner. A pending one keeps its Cancel button (which
+              // can't live inside a link), and cancelled/rejected lead nowhere.
+              const accepted = r.request_status === "ACCEPTED";
+              const targetId = r.counterparty?.channel_id;
+              const linkable = accepted && !!targetId;
+
+              const identity = (
                 <div className="flex min-w-0 items-center gap-3">
                   <InitialAvatar name={r.counterparty?.name} />
                   <div className="min-w-0">
                     <div className="truncate text-sm font-bold">{r.counterparty?.name || "Unknown"}</div>
-                    <div className="text-[11px] text-n500">{r.created_at?.slice(0, 10)}</div>
+                    <div className="text-n500 text-[11px]">
+                      {accepted ? "Connected — view partner profile" : r.created_at?.slice(0, 10)}
+                    </div>
                   </div>
                 </div>
-                {r.request_status === "PENDING" ? (
-                  <div className="flex flex-shrink-0 items-center gap-2">
-                    <span className="flex items-center gap-1 rounded-full bg-warning-bg px-2 py-1 text-[10px] font-bold text-warning-ink">
-                      <Clock size={11} strokeWidth={2} /> PENDING
-                    </span>
-                    <button
-                      type="button"
-                      disabled={actingId === r.request_id}
-                      onClick={() => act(r.request_id, "CANCEL")}
-                      className="flex items-center gap-1 text-xs font-semibold text-danger-ink"
-                    >
-                      <X size={12} strokeWidth={2.5} /> {actingId === r.request_id ? "Cancelling…" : "Cancel"}
-                    </button>
-                  </div>
-                ) : (
-                  <StatusBadge status={r.request_status} />
-                )}
-              </div>
-            ))}
+              );
+
+              if (linkable) {
+                return (
+                  <Link
+                    key={r.request_id}
+                    href={`/connect/partners/${targetId}`}
+                    className="border-n200 hover:bg-n50 -mx-1 flex items-center justify-between gap-3 rounded-lg border-t px-1 py-2.5 transition-colors"
+                  >
+                    {identity}
+                    <div className="flex shrink-0 items-center gap-2">
+                      <StatusBadge status={r.request_status} />
+                      <ChevronRight size={15} strokeWidth={2} className="text-n300" />
+                    </div>
+                  </Link>
+                );
+              }
+
+              return (
+                <div key={r.request_id} className="border-n200 flex items-center justify-between gap-3 border-t py-2.5">
+                  {identity}
+                  {r.request_status === "PENDING" ? (
+                    <div className="flex flex-shrink-0 items-center gap-2">
+                      <span className="bg-warning-bg text-warning-ink flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold">
+                        <Clock size={11} strokeWidth={2} /> PENDING
+                      </span>
+                      <button
+                        type="button"
+                        disabled={actingId === r.request_id}
+                        onClick={() => act(r.request_id, "CANCEL")}
+                        className="text-danger-ink flex items-center gap-1 text-xs font-semibold"
+                      >
+                        <X size={12} strokeWidth={2.5} /> {actingId === r.request_id ? "Cancelling…" : "Cancel"}
+                      </button>
+                    </div>
+                  ) : (
+                    <StatusBadge status={r.request_status} />
+                  )}
+                </div>
+              );
+            })}
         <Pagination
           page={sentPage.page}
           pageSize={sentPage.pageSize}

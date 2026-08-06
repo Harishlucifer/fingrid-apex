@@ -58,6 +58,14 @@ const COMPANY_STAGES: WorkflowStage[] = [
 
 const inputSm = "w-full rounded-lg border-[1.5px] border-n200 px-3 py-2.5 text-sm";
 
+// Mirrors alpha-api's credentialLabels map — used only if the lookup is unavailable.
+const CREDENTIAL_FALLBACK: Record<string, string> = {
+  RBI_BC: "RBI BC Empanelment",
+  RDAI: "RDAI Registration",
+  IBBI: "IBBI Registered Valuer Certificate",
+  BAR_COUNCIL: "Bar Council Enrollment",
+};
+
 type Row = Record<string, string>;
 
 interface ProfileMeta {
@@ -348,6 +356,22 @@ export function CompanyProfileWizardView() {
   if (loading) return <Card className="py-10 text-center">Loading profile…</Card>;
 
   const isPublished = profileMeta?.profile_status === "PUBLISHED";
+  // Falls back to the fixed codes when the CONNECT_CREDENTIAL_LABEL lookup hasn't loaded (or
+  // failed). Without this a dropdown is strictly worse than the old free-text field: an empty
+  // list would make the mandatory credential impossible to select, so publish could never pass.
+  // These four are the complete set the server's mandatoryCredentials map recognises.
+  const credentialOptions = (
+    Object.keys(credentialLabels).length
+      ? Object.entries(credentialLabels)
+      : Object.entries(CREDENTIAL_FALLBACK)
+  ).map(([value, label]) => ({ value, label: `${label} (${value})` }));
+  // Advisory only — alpha-api's mandatoryCredentials map is empty, so publish is no longer
+  // gated on this. Still surfaced because the credential is what lifts the verification tier.
+  const missingCredential =
+    entity.mandatoryCredential &&
+    !credentials.some((c) => String(c.type ?? "").trim() === entity.mandatoryCredential)
+      ? entity.mandatoryCredential
+      : null;
 
   const steps: WorkflowStep[] = stages.map((name, i) => ({
     label: name,
@@ -593,14 +617,23 @@ export function CompanyProfileWizardView() {
               </Field>
               {entity.mandatoryCredential && (
                 <Alert tone="warning">
-                  <b>{credentialLabels[entity.mandatoryCredential]}</b> is mandatory for entity type <b>{entity.label}</b> before
-                  publishing.
+                  <b>{credentialLabels[entity.mandatoryCredential]}</b> is recommended for entity type{" "}
+                  <b>{entity.label}</b> — it lifts your verification tier. Publishing does not require it.
                 </Alert>
               )}
               <Field label="Regulatory credentials">
+                {/* A select, not free text: the publish guard matches the credential code
+                    exactly (bc → "RBI_BC"), so a typo here used to fail at Publish with a
+                    message that pointed at the credential rather than at the typo. Options come
+                    from the CONNECT_CREDENTIAL_LABEL lookup, i.e. the same keys the server maps. */}
                 <DynamicTable
                   columns={[
-                    { key: "type", label: "Type (e.g. RBI_BC)" },
+                    {
+                      key: "type",
+                      label: "Type",
+                      placeholder: "Select credential…",
+                      options: credentialOptions,
+                    },
                     { key: "registration_no", label: "Registration No." },
                     { key: "document_id", label: "Document ID" },
                   ]}
@@ -666,6 +699,32 @@ export function CompanyProfileWizardView() {
                 claim.
               </Alert>
               {publishError && <Alert tone="error">{publishError}</Alert>}
+              {/* Non-blocking: you can publish without it, but the page stays at TIER_0 until a
+                  credential is recorded. Names the exact code and the right table, because the
+                  row belongs under Regulatory credentials, not Lender empanelments. */}
+              {missingCredential && !isPublished && (
+                <Alert tone="warning">
+                  <div>
+                    <b>{credentialLabels[missingCredential] || missingCredential}</b> is recommended
+                    for entity type <b>{entity.label || entityType}</b>. You can publish without it,
+                    but your page stays at TIER_0 until it is recorded.
+                    <div className="mt-1 text-[12px]">
+                      Add it under <b>Regulatory credentials</b> (not Lender empanelments) with type{" "}
+                      <span className="font-mono font-semibold">{missingCredential}</span>.
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const idx = stages.indexOf("Empanelments");
+                        if (idx >= 0) setStepIdx(idx);
+                      }}
+                      className="mt-2 text-[12px] font-semibold underline"
+                    >
+                      Go to Empanelments &amp; Credentials
+                    </button>
+                  </div>
+                </Alert>
+              )}
               {profileMeta?.profile_status === "PUBLISHED" ? (
                 <Alert tone="success">
                   <span className="flex items-center gap-1.5">

@@ -12,6 +12,8 @@ export interface DynamicTableColumn {
   maxLength?: number;
   /** Marks the cell red when the row is filled but this value is unusable. */
   validate?: (value: unknown) => string | null;
+  /** Renders a select instead of a text box. Use where the server matches on an exact code. */
+  options?: { value: string; label: string }[];
 }
 
 // Add/remove-row table for repeatable structured fields (branches, staff-by-role,
@@ -67,6 +69,21 @@ export function DynamicTable({
                   const cellError = c.validate ? c.validate(raw) : null;
                   return (
                     <td key={c.key} className="p-1 align-top">
+                      {c.options ? (
+                        <select
+                          value={raw}
+                          aria-invalid={!!cellError || undefined}
+                          onChange={(e) => updateCell(i, c.key, e.target.value)}
+                          className="border-input aria-invalid:border-destructive h-auto w-full rounded-xl border bg-white px-2 py-1.5 text-xs outline-none"
+                        >
+                          <option value="">{c.placeholder || "Select…"}</option>
+                          {c.options.map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
                       <Input
                         value={raw}
                         placeholder={c.placeholder}
@@ -87,6 +104,7 @@ export function DynamicTable({
                         }}
                         className="h-auto px-2 py-1.5 text-xs"
                       />
+                      )}
                       {cellError && (
                         <span className="text-danger-ink mt-0.5 block text-[10px] leading-tight">
                           {cellError}

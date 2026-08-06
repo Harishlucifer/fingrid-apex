@@ -113,16 +113,24 @@ export function MyRequirementsView() {
           {items.map((r) => {
             const statusClass = STATUS_STYLE[r.listing_status] || STATUS_STYLE.DRAFT;
             const states = r.need?.geography?.states || [];
+            const canEdit = r.listing_status === "DRAFT";
+            const canViewMatches = (r.match_count || 0) > 0;
+            const canClose = r.listing_status === "LIVE" || r.listing_status === "MATCHED";
+            const hasActions = canEdit || canViewMatches || canClose;
             return (
-              <Card key={r.requirement_id} className="flex flex-col">
+              <Card key={r.requirement_id} className="flex h-full flex-col">
                 <div className="mb-3 flex items-start justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <span className="flex size-10 flex-shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600">
                       <ClipboardList size={18} strokeWidth={2} />
                     </span>
-                    <div className="min-w-0">
+                    {/* Two reserved lines: without the fallback, a requirement with no context
+                        sits a line higher than its neighbour and the chip rows stop aligning. */}
+                    <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-bold">{typeLabel(r.partnership_type, partnershipTypes)}</div>
-                      {r.context && <div className="truncate text-[11px] text-n500">{r.context}</div>}
+                      <div className={`truncate text-[11px] ${r.context ? "text-n500" : "text-n300"}`}>
+                        {r.context || "No description added"}
+                      </div>
                     </div>
                   </div>
                   <span className={`flex-shrink-0 rounded-full px-2 py-1 text-[10px] font-bold ${statusClass}`}>
@@ -130,7 +138,7 @@ export function MyRequirementsView() {
                   </span>
                 </div>
 
-                <div className="mb-3 flex flex-wrap gap-2">
+                <div className="mb-3 flex flex-wrap items-start gap-2">
                   <span className="flex items-center gap-1 rounded-lg bg-n100 px-2 py-1 text-[11px] font-semibold text-navy-900">
                     <Target size={11} strokeWidth={2} /> {r.match_count || 0} match{(r.match_count || 0) === 1 ? "" : "es"}
                   </span>
@@ -148,27 +156,31 @@ export function MyRequirementsView() {
                   )}
                 </div>
 
-                <div className="mt-auto flex items-center gap-2 border-t border-n200 pt-3">
-                  {r.listing_status === "DRAFT" && (
-                    <Button asChild variant="outline" size="sm" className="px-3 py-1.5 text-xs">
-                      <Link href={`/connect/requirements/${r.requirement_id}`}>Continue editing</Link>
-                    </Button>
-                  )}
-                  {(r.match_count || 0) > 0 && (
-                    <Button asChild variant="outline" size="sm" className="px-3 py-1.5 text-xs">
-                      <Link href="/connect/matches">View matches</Link>
-                    </Button>
-                  )}
-                  {(r.listing_status === "LIVE" || r.listing_status === "MATCHED") && (
-                    <button
-                      type="button"
-                      onClick={() => doClose(r.requirement_id)}
-                      className="ml-auto text-xs font-semibold text-danger-ink"
-                    >
-                      Close
-                    </button>
-                  )}
-                </div>
+                {/* Rendered only when there is something to do — a closed requirement with no
+                    matches was drawing a divider over an empty strip. */}
+                {hasActions && (
+                  <div className="border-n200 mt-auto flex min-h-[45px] items-center gap-2 border-t pt-3">
+                    {canEdit && (
+                      <Button asChild variant="outline" size="sm" className="px-3 py-1.5 text-xs">
+                        <Link href={`/connect/requirements/${r.requirement_id}`}>Continue editing</Link>
+                      </Button>
+                    )}
+                    {canViewMatches && (
+                      <Button asChild variant="outline" size="sm" className="px-3 py-1.5 text-xs">
+                        <Link href="/connect/matches">View matches</Link>
+                      </Button>
+                    )}
+                    {canClose && (
+                      <button
+                        type="button"
+                        onClick={() => doClose(r.requirement_id)}
+                        className="text-danger-ink hover:text-danger ml-auto text-xs font-semibold transition-colors"
+                      >
+                        Close
+                      </button>
+                    )}
+                  </div>
+                )}
               </Card>
             );
           })}

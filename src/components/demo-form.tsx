@@ -1,10 +1,10 @@
 "use client";
 
+import { Mail, Phone, MapPin } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
-import { Bullets } from "@/components/site";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,12 +29,34 @@ function FieldError({ message }: { message?: string }) {
   return <p className="text-danger mt-1 text-[13px]">{message}</p>;
 }
 
+// Contact block content, kept beside the form it belongs to.
+const CONTACT_DETAILS = [
+  { label: "Email", value: "sreedhar@fingrid.ai", href: "mailto:sreedhar@fingrid.ai", icon: Mail },
+  { label: "Phone", value: "+91 88835 65000", href: "tel:+918883565000", icon: Phone },
+  {
+    label: "Location",
+    value: "C6, Lacasa Apartment, GRG Nagar, Coimbatore 641014, India",
+    href: undefined,
+    icon: MapPin,
+  },
+] as const;
+
+/** Mandatory marker, so the asterisk is never hand-typed inconsistently. */
+function Req() {
+  return (
+    <span aria-hidden="true" className="text-danger">
+      {" *"}
+    </span>
+  );
+}
+
 const EMPTY: DemoRequest = {
   name: "",
   email: "",
+  phone: "",
   company: "",
   entityType: "NBFC / Bank",
-  assetClasses: "",
+  message: "",
 };
 
 /**
@@ -88,26 +110,36 @@ export function DemoForm() {
               Tailored working session
             </div>
             <h3 className="font-display mb-2 text-[27px] font-semibold tracking-[-0.03em]">
-              Book a demo
+              Get in Touch
             </h3>
             <p className="text-[14.5px] leading-[1.7] text-n500">
-              Tell us who you are — lender, BC, LSP or DSA — and what you lend.
-              We'll come back with a working demo on your products and a
-              commercial proposal, not a rate card that answers nothing.
+              Ready to build the future of collaborative lending? Our team is
+              here to help you get started with Fingrid&apos;s Operating Fabric.
             </p>
-            <Bullets>
-              <li>
-                Prefer email? Write to hello@fingrid.ai with your entity type
-                and asset classes
-              </li>
-              <li>
-                Demos are configured to your context — expect real workflows,
-                not slideware
-              </li>
-              <li>
-                Implementation scope and timeline included in every proposal
-              </li>
-            </Bullets>
+
+            <dl className="mt-6 grid gap-4">
+              {CONTACT_DETAILS.map((detail) => (
+                <div key={detail.label} className="flex items-start gap-3">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-blue-500/10 text-blue-600">
+                    <detail.icon size={16} strokeWidth={2} />
+                  </span>
+                  <div className="min-w-0">
+                    <dt className="text-n400 text-[10px] font-semibold tracking-[0.08em] uppercase">
+                      {detail.label}
+                    </dt>
+                    <dd className="text-navy-900 mt-0.5 text-[14px] font-semibold">
+                      {detail.href ? (
+                        <a href={detail.href} className="hover:text-blue-600 transition-colors">
+                          {detail.value}
+                        </a>
+                      ) : (
+                        detail.value
+                      )}
+                    </dd>
+                  </div>
+                </div>
+              ))}
+            </dl>
             {lastReference ? (
               <p className="bg-success-bg text-success-ink mt-4 rounded-lg px-3.5 py-2.5 text-[13.5px]">
                 Your last request reference is{" "}
@@ -124,10 +156,14 @@ export function DemoForm() {
           >
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <Label htmlFor="demo-name">Name</Label>
+                <Label htmlFor="demo-name">
+                  Full Name
+                  <Req />
+                </Label>
                 <Input
                   id="demo-name"
                   autoComplete="name"
+                  placeholder="Your name"
                   aria-invalid={!!errors.name}
                   className="mt-1.5"
                   {...form.register("name")}
@@ -135,33 +171,54 @@ export function DemoForm() {
                 <FieldError message={errors.name?.message} />
               </div>
               <div>
-                <Label htmlFor="demo-email">Work email</Label>
+                <Label htmlFor="demo-email">
+                  Email Address
+                  <Req />
+                </Label>
                 <Input
                   id="demo-email"
                   type="email"
                   autoComplete="email"
+                  placeholder="you@company.com"
                   aria-invalid={!!errors.email}
                   className="mt-1.5"
                   {...form.register("email")}
                 />
                 <FieldError message={errors.email?.message} />
               </div>
+              <div>
+                <Label htmlFor="demo-phone">Phone Number</Label>
+                <Input
+                  id="demo-phone"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  placeholder="+91 00000 00000"
+                  aria-invalid={!!errors.phone}
+                  className="mt-1.5"
+                  {...form.register("phone")}
+                />
+                <FieldError message={errors.phone?.message} />
+              </div>
+              <div>
+                <Label htmlFor="demo-company">Company Name</Label>
+                <Input
+                  id="demo-company"
+                  autoComplete="organization"
+                  placeholder="Your company"
+                  aria-invalid={!!errors.company}
+                  className="mt-1.5"
+                  {...form.register("company")}
+                />
+                <FieldError message={errors.company?.message} />
+              </div>
             </div>
 
             <div>
-              <Label htmlFor="demo-company">Company</Label>
-              <Input
-                id="demo-company"
-                autoComplete="organization"
-                aria-invalid={!!errors.company}
-                className="mt-1.5"
-                {...form.register("company")}
-              />
-              <FieldError message={errors.company?.message} />
-            </div>
-
-            <div>
-              <Label htmlFor="demo-entity">You are a…</Label>
+              <Label htmlFor="demo-entity">
+                You are a
+                <Req />
+              </Label>
               <Select
                 value={selectedEntity}
                 onValueChange={(v) =>
@@ -175,7 +232,7 @@ export function DemoForm() {
                   aria-invalid={!!errors.entityType}
                   className="mt-1.5 w-full"
                 >
-                  <SelectValue placeholder="Select entity type" />
+                  <SelectValue placeholder="Select your role" />
                 </SelectTrigger>
                 <SelectContent>
                   {ENTITY_TYPES.map((t) => (
@@ -189,19 +246,19 @@ export function DemoForm() {
             </div>
 
             <div>
-              <Label htmlFor="demo-assets">
-                What do you lend against?{" "}
-                <span className="text-n400 font-normal">(optional)</span>
+              <Label htmlFor="demo-message">
+                Message
+                <Req />
               </Label>
               <Textarea
-                id="demo-assets"
-                rows={3}
-                placeholder="Two-wheeler, used car, MSME, home loan…"
-                aria-invalid={!!errors.assetClasses}
+                id="demo-message"
+                rows={4}
+                placeholder="Tell us about your requirements..."
+                aria-invalid={!!errors.message}
                 className="mt-1.5"
-                {...form.register("assetClasses")}
+                {...form.register("message")}
               />
-              <FieldError message={errors.assetClasses?.message} />
+              <FieldError message={errors.message?.message} />
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
@@ -211,7 +268,7 @@ export function DemoForm() {
                 variant="fgPrimary"
                 disabled={mutation.isPending}
               >
-                {mutation.isPending ? "Sending…" : "Request a demo"}
+                {mutation.isPending ? "Sending…" : "Send Message"}
                 {mutation.isPending ? null : (
                   <em aria-hidden="true" className="text-mint not-italic">
                     →

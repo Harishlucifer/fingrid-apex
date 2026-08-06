@@ -443,8 +443,8 @@ export function CompanyProfileView() {
       >
         {entity.mandatoryCredential && !(profile?.credentials || []).length && (
           <Alert tone="warning">
-            <b>{credentialLabels[entity.mandatoryCredential]}</b> is mandatory for entity type{" "}
-            <b>{entity.label}</b> before publishing.
+            <b>{credentialLabels[entity.mandatoryCredential]}</b> is recommended for entity type{" "}
+            <b>{entity.label}</b> — it lifts your verification tier.
           </Alert>
         )}
         <div className="grid gap-4 lg:grid-cols-2">
