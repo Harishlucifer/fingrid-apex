@@ -31,7 +31,7 @@ function FieldError({ message }: { message?: string }) {
 
 // Contact block content, kept beside the form it belongs to.
 const CONTACT_DETAILS = [
-  { label: "Email", value: "sreedhar@fingrid.ai", href: "mailto:sreedhar@fingrid.ai", icon: Mail },
+  { label: "Email", value: "sreedhar@fingrid.ai", href: "mailto:sudharson@loanwiser.in", icon: Mail },
   { label: "Phone", value: "+91 88835 65000", href: "tel:+918883565000", icon: Phone },
   {
     label: "Location",
