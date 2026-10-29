@@ -1,6 +1,3 @@
-**Effective Date:** [DD Month YYYY]  
-**Last Updated:** [DD Month YYYY]
-
 ## 1. Acceptance of Terms
 
 These Terms of Use (“Terms”) govern access to and use of the Fingrid.ai website, applications, APIs, AI-powered features, document-processing tools, voice services and related products operated by Inforvio Technologies Private Limited (“Inforvio”, “we”, “our” or “us”).
@@ -186,8 +183,9 @@ For questions about these Terms or the Fingrid.ai services, contact:
 
 **Organisation:** Inforvio Technologies Private Limited  
 **Website:** https://fingrid.ai/  
-**Email:** [INSERT APPROVED GENERAL CONTACT EMAIL]  
-**Registered Office Address:** [INSERT VERIFIED REGISTERED OFFICE ADDRESS]
+**Email:** sreedhar@loanwiser.in  
+**Phone:** +91 88835 65000  
+**Registered Office Address:** C6, Lacasa Apartment, Nehru Nagar West, Coimbatore, Tamil Nadu – 641014
 
 For personal-data requests or privacy complaints, please use the contact details in Section 17 of the Privacy Policy.
 

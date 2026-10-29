@@ -1,5 +1,3 @@
-**Effective Date:** [DD Month YYYY]  
-**Last Updated:** [DD Month YYYY]  
 **Website:** https://fingrid.ai/  
 **Operated by:** Inforvio Technologies Private Limited (“Inforvio”, “Fingrid.ai”, “we”, “our” or “us”)
 
@@ -257,7 +255,7 @@ Subject to applicable law and the relevant service arrangement, individuals may 
 
 ### How to submit a request
 
-Send a request to **[APPROVED PRIVACY / GRIEVANCE EMAIL]** with the subject line **“Privacy Request — Fingrid.ai”**.
+Send a request to **sreedhar@loanwiser.in** with the subject line **“Privacy Request — Fingrid.ai”**.
 
 Please include enough information for us to understand the request and identify the relevant service or interaction. We may request reasonable additional information to verify identity or authority, while avoiding unnecessary collection of further personal data.
 
@@ -313,8 +311,9 @@ For privacy requests, complaints or questions about this Policy, contact:
 
 **Organisation:** Inforvio Technologies Private Limited  
 **Website:** https://fingrid.ai/  
-**Privacy / Grievance Email:** [INSERT APPROVED EMAIL ADDRESS]  
-**Registered Office Address:** [INSERT VERIFIED REGISTERED OFFICE ADDRESS]  
+**Privacy / Grievance Email:** sreedhar@loanwiser.in  
+**Phone:** +91 88835 65000  
+**Registered Office Address:** C6, Lacasa Apartment, Nehru Nagar West, Coimbatore, Tamil Nadu – 641014  
 **Grievance Officer / Privacy Contact:** [INSERT APPROVED NAME OR DESIGNATION]
 
 Please do not send passwords, complete identity documents, full financial records or other highly sensitive information in an initial email unless specifically requested through an approved secure process.
