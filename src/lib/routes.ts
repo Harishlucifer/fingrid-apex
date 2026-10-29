@@ -75,4 +75,6 @@ export const ROUTES = [
   "/ai/agentic-engineering",
   "/network/for-lenders",
   "/network/for-partners",
+  "/privacy-policy",
+  "/terms-of-use",
 ] as const;
