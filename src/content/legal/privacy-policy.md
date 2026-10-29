@@ -311,10 +311,10 @@ For privacy requests, complaints or questions about this Policy, contact:
 
 **Organisation:** Inforvio Technologies Private Limited  
 **Website:** https://fingrid.ai/  
-**Privacy / Grievance Email:** sreedhar@loanwiser.in  
+**Direct Executive / Grievance Email:** sreedhar@loanwiser.in (Sreedhar Ramasamy, Founder & CEO)  
 **Phone:** +91 88835 65000  
 **Registered Office Address:** C6, Lacasa Apartment, Nehru Nagar West, Coimbatore, Tamil Nadu – 641014  
-**Grievance Officer / Privacy Contact:** Sreedhar Ramasamy
+**Grievance Officer / Privacy Contact:** Sreedhar Ramasamy, Founder & CEO
 
 Please do not send passwords, complete identity documents, full financial records or other highly sensitive information in an initial email unless specifically requested through an approved secure process.
 
