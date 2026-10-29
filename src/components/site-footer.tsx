@@ -68,7 +68,18 @@ export function SiteFooter() {
       <div className="wrap text-band-muted flex flex-col gap-3 py-6 text-[15px] sm:flex-row sm:items-center sm:justify-between">
         <span>© 2026 Inforvio Technologies Pvt. Ltd.</span>
         <div className="flex flex-wrap gap-x-5 gap-y-2">
-          <span>Privacy-first</span>
+          <Link
+            href="/privacy-policy"
+            className="transition-colors hover:text-white focus-visible:text-white"
+          >
+            Privacy Policy
+          </Link>
+          <Link
+            href="/terms-of-use"
+            className="transition-colors hover:text-white focus-visible:text-white"
+          >
+            Terms of Use
+          </Link>
           <span>Secure by design</span>
           <span>Compliance-ready</span>
         </div>
